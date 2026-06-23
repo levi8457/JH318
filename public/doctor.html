@@ -193,25 +193,69 @@
         /* 成绩单模态框 */
         .summary-modal .modal {
             max-width: 640px;
+            border-radius: 16px;
+            overflow: hidden;
         }
 
         .summary-modal .modal-header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             border-bottom: none;
-            border-radius: 12px 12px 0 0;
+            padding: 24px;
+            position: relative;
         }
 
         .summary-modal .modal-header h3 {
             color: var(--white);
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
         }
 
         .summary-modal .modal-close {
-            color: rgba(255, 255, 255, 0.8);
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--white);
+            font-size: 22px;
+            line-height: 36px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .summary-modal .modal-close:hover {
-            background-color: rgba(255, 255, 255, 0.15);
-            color: var(--white);
+            background: rgba(255, 255, 255, 0.35);
+            transform: rotate(90deg);
+        }
+
+        .summary-modal .modal-body {
+            padding: 28px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .summary-modal .modal-footer {
+            padding: 16px 28px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .summary-modal .modal-footer .btn {
+            min-width: 140px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 8px;
         }
 
         .summary-stats {
@@ -498,13 +542,14 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>今日工作成绩单</h3>
-                <button class="modal-close" onclick="closeSummaryModal()">&times;</button>
+                <button class="modal-close" onclick="closeSummaryModal()" title="关闭">&times;</button>
             </div>
             <div class="modal-body" id="summaryContent">
                 <!-- 动态填充 -->
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="closeSummaryModal()">我知道了</button>
+                <button class="btn" style="background-color: var(--bg); color: var(--text-muted);" onclick="closeSummaryModal()">关闭</button>
+                <button class="btn btn-primary" onclick="closeSummaryModal()">确认</button>
             </div>
         </div>
     </div>
@@ -968,6 +1013,15 @@
 
         document.getElementById('detailModal').addEventListener('click', function(e) {
             if (e.target === this) closeDetailModal();
+        });
+
+        // ESC 键关闭模态框
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeConfirmModal();
+                closeSummaryModal();
+                closeDetailModal();
+            }
         });
 
         // ========================================
