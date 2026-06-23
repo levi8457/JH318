@@ -984,7 +984,8 @@
             }
 
             api.get(url).then(function(result) {
-                var logs = result.data || result || [];
+                var responseData = result.data || result || {};
+                var logs = responseData.list || responseData || [];
                 var tbody = document.getElementById('logsTableBody');
 
                 if (logs.length === 0) {
