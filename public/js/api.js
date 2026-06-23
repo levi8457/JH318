@@ -2,7 +2,7 @@
  * 医院呼叫系统 - API 请求封装
  */
 
-const BASE_URL = 'http://' + window.location.hostname + ':3000/api';
+const BASE_URL = 'http://' + window.location.host + '/api';
 
 /**
  * 基础请求函数

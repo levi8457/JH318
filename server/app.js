@@ -9,7 +9,7 @@ const fs = require('fs');
 
 // 创建 Express 应用
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3456;
 
 // ==================== 中间件 ====================
 
