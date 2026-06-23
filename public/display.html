@@ -439,7 +439,7 @@
         function loadDisplayData() {
             if (!roomId) return;
 
-            var baseUrl = 'http://' + window.location.hostname + ':3000/api';
+            var baseUrl = 'http://' + window.location.host + '/api';
             fetch(baseUrl + '/display/' + roomId)
                 .then(function(response) {
                     if (!response.ok) throw new Error('请求失败');
@@ -544,7 +544,7 @@
             if (!roomId) return;
 
             var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            var wsUrl = wsProtocol + '//' + window.location.hostname + ':3000/ws?room_id=' + roomId;
+            var wsUrl = wsProtocol + '//' + window.location.host + '/ws?room_id=' + roomId;
 
             try {
                 ws = new WebSocket(wsUrl);
