@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医生叫号后台 - 医院呼叫系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 医生叫号页面专用样式 */
+
+        /* 叫号区域 */
+        .call-area {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .call-ticket {
+            font-size: 72px;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.1;
+            margin-bottom: 12px;
+            letter-spacing: 4px;
+        }
+
+        .call-ticket.empty {
+            color: var(--text-muted);
+            font-size: 28px;
+            font-weight: 500;
+            letter-spacing: 0;
+        }
+
+        .call-patient-name {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .call-patient-name.empty {
+            color: var(--text-muted);
+            font-size: 16px;
+            font-weight: 400;
+        }
+
+        .call-disease {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .call-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .call-actions .btn {
+            min-width: 140px;
+            padding: 16px 36px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 10px;
+            letter-spacing: 1px;
+        }
+
+        .btn-call-next {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            box-shadow: 0 4px 16px rgba(3, 105, 161, 0.3);
+        }
+
+        .btn-call-next:hover:not(:disabled) {
+            box-shadow: 0 6px 24px rgba(3, 105, 161, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-skip {
+            background-color: var(--warning);
+            color: var(--white);
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25);
+        }
+
+        .btn-skip:hover:not(:disabled) {
+            background-color: #b45309;
+            box-shadow: 0 6px 18px rgba(217, 119, 6, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* 时间轴区域 */
+        .timeline-section {
+            margin-top: 8px;
+        }
+
+        .timeline-section .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .timeline-section .timeline {
+            padding: 24px 0 16px;
+            min-height: 100px;
+        }
+
+        .timeline-item .timeline-number {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 4px;
+        }
+
+        .timeline-item .timeline-name {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* 下班按钮 */
+        .off-work-btn {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            z-index: 50;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: var(--white);
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(220, 38, 38, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.3;
+        }
+
+        .off-work-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 32px rgba(220, 38, 38, 0.5);
+        }
+
+        .off-work-btn:active {
+            transform: scale(1);
+        }
+
+        .off-work-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 确认下班模态框 */
+        .confirm-modal .modal {
+            max-width: 400px;
+        }
+
+        .confirm-modal .modal-body {
+            text-align: center;
+            padding: 32px 24px;
+        }
+
+        .confirm-modal .confirm-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background-color: #fee2e2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 28px;
+            color: var(--danger);
+        }
+
+        .confirm-modal .confirm-text {
+            font-size: 16px;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .confirm-modal .confirm-subtext {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* 成绩单模态框 */
+        .summary-modal .modal {
+            max-width: 640px;
+        }
+
+        .summary-modal .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-bottom: none;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .summary-modal .modal-header h3 {
+            color: var(--white);
+        }
+
+        .summary-modal .modal-close {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .summary-modal .modal-close:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: var(--white);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .summary-stat-item {
+            text-align: center;
+            padding: 16px;
+            background-color: var(--bg);
+            border-radius: 8px;
+        }
+
+        .summary-stat-item .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1.2;
+        }
+
+        .summary-stat-item .stat-name {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* 评分区域 */
+        .score-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .score-section h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: var(--bg);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .score-item .score-label {
+            color: var(--text);
+        }
+
+        .score-item .score-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .score-total {
+            text-align: center;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #bae6fd 100%);
+            border-radius: 8px;
+        }
+
+        .score-total .total-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .score-total .total-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        /* 励志语 */
+        .motivation {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 8px;
+        }
+
+        .motivation .motivation-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #92400e;
+            line-height: 1.6;
+        }
+
+        /* 患者详情模态框 */
+        .detail-modal .modal {
+            max-width: 480px;
+        }
+
+        .detail-field {
+            margin-bottom: 14px;
+        }
+
+        .detail-field .field-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-field .field-value {
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        /* 锁定状态 */
+        .locked-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .locked-overlay .locked-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .locked-overlay .locked-subtext {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .call-ticket {
+                font-size: 48px;
+            }
+
+            .call-patient-name {
+                font-size: 22px;
+            }
+
+            .call-actions .btn {
+                min-width: 120px;
+                padding: 14px 28px;
+                font-size: 16px;
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .summary-stat-item .stat-value {
+                font-size: 22px;
+            }
+
+            .score-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .off-work-btn {
+                width: 64px;
+                height: 64px;
+                font-size: 13px;
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+        <a class="navbar-brand" href="doctor.html">
+            <div class="logo-icon">+</div>
+            <span>医院呼叫系统</span>
+        </a>
+        <div class="navbar-nav">
+            <div class="navbar-user">
+                <span class="user-name" id="navUserName">--</span>
+                <span class="badge badge-green">医生</span>
+                <button class="btn btn-sm btn-danger" onclick="handleLogout()">退出</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 页面主体 -->
+    <div class="page-body">
+        <div class="container">
+            <!-- 顶部统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">&#9764;</div>
+                    <div class="stat-number" id="statSeenCount">0</div>
+                    <div class="stat-label">今日已接诊</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">&#9200;</div>
+                    <div class="stat-number" id="statCurrentTime">--:--</div>
+                    <div class="stat-label">当前时间</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">&#127970;</div>
+                    <div class="stat-number" id="statCurrentTicket">暂无</div>
+                    <div class="stat-label">当前号码</div>
+                </div>
+            </div>
+
+            <!-- 中央叫号区域 -->
+            <div class="card">
+                <div class="call-area">
+                    <div class="call-ticket empty" id="callTicket">等待叫号</div>
+                    <div class="call-patient-name empty" id="callPatientName">--</div>
+                    <div class="call-disease" id="callDisease"></div>
+                    <div class="call-actions">
+                        <button class="btn btn-call-next" id="btnCallNext" onclick="callNext()" disabled>下一位</button>
+                        <button class="btn btn-skip" id="btnSkip" onclick="skipPatient()" disabled>跳过</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部时间轴 -->
+            <div class="card timeline-section">
+                <div class="card-header">
+                    <span>今日接诊记录</span>
+                    <span class="text-muted" style="font-size: 13px;" id="timelineCount">共 0 条</span>
+                </div>
+                <div class="timeline" id="timelineContainer">
+                    <div class="empty-state" style="width: 100%; padding: 30px;">
+                        <div class="empty-text">暂无接诊记录</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下班按钮 -->
+    <button class="off-work-btn" id="btnOffWork" onclick="openOffWorkConfirm()">下班</button>
+
+    <!-- 确认下班模态框 -->
+    <div class="modal-overlay confirm-modal" id="confirmModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>确认下班</h3>
+                <button class="modal-close" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="confirm-icon">&#9888;</div>
+                <div class="confirm-text">确定要结束今天的工作吗？</div>
+                <div class="confirm-subtext">确认后将生成今日工作成绩单</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background-color: var(--bg); color: var(--text-muted);" onclick="closeConfirmModal()">取消</button>
+                <button class="btn btn-danger" id="confirmOffWorkBtn" onclick="handleOffWork()">确认下班</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成绩单模态框 -->
+    <div class="modal-overlay summary-modal" id="summaryModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>今日工作成绩单</h3>
+                <button class="modal-close" onclick="closeSummaryModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="summaryContent">
+                <!-- 动态填充 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeSummaryModal()">我知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 患者详情模态框 -->
+    <div class="modal-overlay detail-modal" id="detailModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>患者详情</h3>
+                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="detailContent">
+                <!-- 动态填充 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeDetailModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 锁定遮罩（下班后） -->
+    <div class="locked-overlay d-none" id="lockedOverlay">
+        <div class="locked-text">今日工作已结束</div>
+        <div class="locked-subtext">辛苦了，明天见！</div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        // ========================================
+        // 全局状态
+        // ========================================
+        var refreshTimer = null;
+        var isOffWork = false;
+
+        // ========================================
+        // 页面初始化
+        // ========================================
+        (function init() {
+            // 检查登录状态
+            var token = localStorage.getItem('token');
+            var userStr = localStorage.getItem('user');
+            if (!token || !userStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // 检查角色
+            var user;
+            try {
+                user = JSON.parse(userStr);
+            } catch (e) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            if (user.role !== 'doctor') {
+                var rolePageMap = {
+                    'admin': 'admin.html',
+                    'nurse': 'nurse.html'
+                };
+                var targetPage = rolePageMap[user.role];
+                if (targetPage) {
+                    window.location.href = targetPage;
+                } else {
+                    window.location.href = 'login.html';
+                }
+                return;
+            }
+
+            // 显示用户名
+            document.getElementById('navUserName').textContent = user.name || user.phone || '--';
+
+            // 加载数据
+            loadTodayData();
+            loadTimeline();
+
+            // 每5秒自动刷新
+            refreshTimer = setInterval(function() {
+                if (!isOffWork) {
+                    loadTodayData();
+                    loadTimeline();
+                    updateClock();
+                }
+            }, 5000);
+
+            // 立即更新时钟
+            updateClock();
+            setInterval(updateClock, 1000);
+        })();
+
+        // ========================================
+        // 更新时钟
+        // ========================================
+        function updateClock() {
+            var now = new Date();
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('statCurrentTime').textContent = hours + ':' + minutes;
+        }
+
+        // ========================================
+        // 加载今日概况
+        // ========================================
+        function loadTodayData() {
+            api.get('/doctor/today').then(function(result) {
+                var data = result.data || result || {};
+                var doneCount = data.done_count || 0;
+                var waitingCount = data.waiting_count || 0;
+                var currentPatient = data.current_patient || null;
+                var hasNext = waitingCount > 0;
+
+                // 更新统计
+                document.getElementById('statSeenCount').textContent = doneCount + '位';
+
+                // 更新当前号码
+                if (currentPatient) {
+                    document.getElementById('statCurrentTicket').textContent = currentPatient.ticket_number || '暂无';
+                } else {
+                    document.getElementById('statCurrentTicket').textContent = '暂无';
+                }
+
+                // 更新叫号区域
+                var callTicketEl = document.getElementById('callTicket');
+                var callNameEl = document.getElementById('callPatientName');
+                var callDiseaseEl = document.getElementById('callDisease');
+
+                if (currentPatient) {
+                    callTicketEl.textContent = currentPatient.ticket_number || '--';
+                    callTicketEl.className = 'call-ticket';
+                    callNameEl.textContent = maskName(currentPatient.name || '');
+                    callNameEl.className = 'call-patient-name';
+                    callDiseaseEl.textContent = currentPatient.symptom_name || '';
+                } else {
+                    callTicketEl.textContent = '等待叫号';
+                    callTicketEl.className = 'call-ticket empty';
+                    callNameEl.textContent = '--';
+                    callNameEl.className = 'call-patient-name empty';
+                    callDiseaseEl.textContent = '';
+                }
+
+                // 更新按钮状态
+                document.getElementById('btnCallNext').disabled = !hasNext;
+                document.getElementById('btnSkip').disabled = !currentPatient;
+            }).catch(function(err) {
+                console.error('加载今日概况失败:', err.message);
+            });
+        }
+
+        // ========================================
+        // 加载时间轴
+        // ========================================
+        function loadTimeline() {
+            api.get('/doctor/timeline').then(function(result) {
+                var items = result.data || result || [];
+                var container = document.getElementById('timelineContainer');
+                var countEl = document.getElementById('timelineCount');
+
+                countEl.textContent = '共 ' + items.length + ' 条';
+
+                if (items.length === 0) {
+                    container.innerHTML = '<div class="empty-state" style="width: 100%; padding: 30px;">' +
+                        '<div class="empty-text">暂无接诊记录</div></div>';
+                    return;
+                }
+
+                var html = '';
+                items.forEach(function(item, index) {
+                    var time = formatTime(item.call_time || item.start_time || '');
+                    var ticket = item.ticket_number || '--';
+                    var name = maskName(item.patient_name || '');
+                    var status = item.status || '';
+                    var isActive = status === 'calling' || status === 'current';
+
+                    var statusClass = '';
+                    if (isActive) {
+                        statusClass = 'active';
+                    } else if (status === 'completed' || status === 'done') {
+                        statusClass = 'completed';
+                    }
+
+                    html += '<div class="timeline-item ' + statusClass + '" onclick="showPatientDetail(' + JSON.stringify(item).replace(/"/g, '&quot;') + ')">' +
+                        '<div class="timeline-dot"></div>' +
+                        '<div class="timeline-time">' + time + '</div>' +
+                        '<div class="timeline-number">' + ticket + '</div>' +
+                        '<div class="timeline-name">' + name + '</div>' +
+                    '</div>';
+                });
+
+                container.innerHTML = html;
+
+                // 自动滚动到最右（最新记录）
+                container.scrollLeft = container.scrollWidth;
+            }).catch(function(err) {
+                console.error('加载时间轴失败:', err.message);
+            });
+        }
+
+        // ========================================
+        // 叫号 - 下一位
+        // ========================================
+        function callNext() {
+            var btn = document.getElementById('btnCallNext');
+            btn.disabled = true;
+            btn.textContent = '叫号中...';
+
+            api.post('/doctor/call-next').then(function(result) {
+                showNotification('叫号成功', 'success');
+                loadTodayData();
+                loadTimeline();
+            }).catch(function(err) {
+                showNotification('叫号失败：' + err.message, 'error');
+            }).finally(function() {
+                btn.disabled = false;
+                btn.textContent = '下一位';
+            });
+        }
+
+        // ========================================
+        // 跳过当前患者
+        // ========================================
+        function skipPatient() {
+            var btn = document.getElementById('btnSkip');
+            btn.disabled = true;
+            btn.textContent = '跳过中...';
+
+            api.post('/doctor/skip').then(function(result) {
+                showNotification('已跳过当前患者', 'warning');
+                loadTodayData();
+                loadTimeline();
+            }).catch(function(err) {
+                showNotification('跳过失败：' + err.message, 'error');
+            }).finally(function() {
+                btn.disabled = false;
+                btn.textContent = '跳过';
+            });
+        }
+
+        // ========================================
+        // 查看患者详情
+        // ========================================
+        function showPatientDetail(item) {
+            var content = document.getElementById('detailContent');
+            var ticket = item.ticket_number || '--';
+            var name = maskName(item.patient_name || '');
+            var disease = item.symptom_name || '--';
+            var symptoms = item.symptoms || '--';
+            var medicalHistory = item.visit_history || '--';
+            var notes = item.remarks || '--';
+            var startTime = formatTime(item.call_time || item.start_time || '');
+            var endTime = formatTime(item.end_time || '');
+
+            content.innerHTML =
+                '<div class="detail-field">' +
+                    '<div class="field-label">号码牌</div>' +
+                    '<div class="field-value"><span class="badge badge-blue">' + ticket + '</span></div>' +
+                '</div>' +
+                '<div class="detail-field">' +
+                    '<div class="field-label">患者姓名</div>' +
+                    '<div class="field-value">' + name + '</div>' +
+                '</div>' +
+                '<div class="detail-field">' +
+                    '<div class="field-label">病症</div>' +
+                    '<div class="field-value">' + disease + '</div>' +
+                '</div>' +
+                '<div class="detail-field">' +
+                    '<div class="field-label">病症症状</div>' +
+                    '<div class="field-value">' + symptoms + '</div>' +
+                '</div>' +
+                '<div class="detail-field">' +
+                    '<div class="field-label">来院就诊记录</div>' +
+                    '<div class="field-value">' + medicalHistory + '</div>' +
+                '</div>' +
+                '<div class="detail-field">' +
+                    '<div class="field-label">备注</div>' +
+                    '<div class="field-value">' + notes + '</div>' +
+                '</div>' +
+                '<div class="detail-field">' +
+                    '<div class="field-label">接诊时间</div>' +
+                    '<div class="field-value">' + (startTime || '--') + (endTime ? ' - ' + endTime : '') + '</div>' +
+                '</div>';
+
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // ========================================
+        // 下班流程
+        // ========================================
+        function openOffWorkConfirm() {
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        function handleOffWork() {
+            var btn = document.getElementById('confirmOffWorkBtn');
+            btn.disabled = true;
+            btn.textContent = '处理中...';
+
+            api.post('/doctor/off-work').then(function() {
+                closeConfirmModal();
+                // 获取成绩单
+                return api.get('/doctor/summary');
+            }).then(function(result) {
+                var summary = result.data || result || {};
+                showSummary(summary);
+            }).catch(function(err) {
+                showNotification('下班操作失败：' + err.message, 'error');
+            }).finally(function() {
+                btn.disabled = false;
+                btn.textContent = '确认下班';
+            });
+        }
+
+        // ========================================
+        // 显示成绩单
+        // ========================================
+        function showSummary(summary) {
+            isOffWork = true;
+
+            // 停止自动刷新
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+
+            // 锁定叫号按钮
+            document.getElementById('btnCallNext').disabled = true;
+            document.getElementById('btnSkip').disabled = true;
+            document.getElementById('btnOffWork').disabled = true;
+
+            // 显示锁定遮罩
+            document.getElementById('lockedOverlay').classList.remove('d-none');
+
+            var content = document.getElementById('summaryContent');
+
+            // 解析后端返回的结构
+            var stats = summary.stats || {};
+            var score = summary.score || {};
+            var session = summary.session || {};
+            var quote = summary.quote || {};
+
+            var doneCount = stats.done_count || 0;
+            var skippedCount = stats.skipped_count || 0;
+            var totalCount = doneCount + skippedCount;
+
+            // 计算工作时长
+            var workDuration = '--';
+            if (session.login_time) {
+                var loginTime = new Date(session.login_time);
+                var logoutTime = session.logout_time ? new Date(session.logout_time) : new Date();
+                var diffMs = logoutTime - loginTime;
+                var diffHours = Math.floor(diffMs / 3600000);
+                var diffMinutes = Math.floor((diffMs % 3600000) / 60000);
+                workDuration = diffHours + '小时' + diffMinutes + '分钟';
+            }
+
+            // 计算平均每位用时
+            var avgTime = '--';
+            if (doneCount > 0 && session.login_time) {
+                var loginTime2 = new Date(session.login_time);
+                var endTime2 = session.logout_time ? new Date(session.logout_time) : new Date();
+                var totalWorkMs = endTime2 - loginTime2;
+                var avgMs = totalWorkMs / doneCount;
+                var avgMin = Math.floor(avgMs / 60000);
+                if (avgMin < 1) {
+                    avgTime = '不到1分钟';
+                } else {
+                    avgTime = avgMin + '分钟';
+                }
+            }
+
+            // 评分
+            var volumeScore = score.volume_score || 0;
+            var attendanceScore = score.attendance_score || 0;
+            var subjectiveScore = score.subjective_score || 0;
+            var totalScore = score.total_score || 0;
+
+            // 励志语
+            var motivation = quote.content || '医者仁心，大爱无疆！';
+            var motivationAuthor = quote.author || '';
+
+            // 构建成绩单HTML
+            var html = '';
+
+            // 诊断统计
+            html += '<div class="summary-stats">' +
+                '<div class="summary-stat-item">' +
+                    '<div class="stat-value">' + totalCount + '</div>' +
+                    '<div class="stat-name">接诊总数</div>' +
+                '</div>' +
+                '<div class="summary-stat-item">' +
+                    '<div class="stat-value">' + workDuration + '</div>' +
+                    '<div class="stat-name">在岗时长</div>' +
+                '</div>' +
+                '<div class="summary-stat-item">' +
+                    '<div class="stat-value">' + avgTime + '</div>' +
+                    '<div class="stat-name">平均每位用时</div>' +
+                '</div>' +
+            '</div>';
+
+            // 工作评分
+            html += '<div class="score-section">';
+            html += '<h4>工作评分</h4>';
+            html += '<div class="score-grid">';
+            html += '<div class="score-item">' +
+                '<span class="score-label">接诊量得分</span>' +
+                '<span class="score-value">' + volumeScore + '分</span>' +
+            '</div>';
+            html += '<div class="score-item">' +
+                '<span class="score-label">考勤得分</span>' +
+                '<span class="score-value">' + attendanceScore + '分</span>' +
+            '</div>';
+            if (subjectiveScore > 0) {
+                html += '<div class="score-item">' +
+                    '<span class="score-label">主观评价</span>' +
+                    '<span class="score-value">' + subjectiveScore + '分</span>' +
+                '</div>';
+            }
+            html += '</div>';
+
+            if (totalScore > 0) {
+                html += '<div class="score-total">' +
+                    '<div class="total-label">综合评分</div>' +
+                    '<div class="total-value">' + totalScore + '</div>' +
+                '</div>';
+            }
+            html += '</div>';
+
+            // 励志语
+            html += '<div class="motivation">' +
+                '<div class="motivation-text">"' + motivation + '"' + (motivationAuthor ? ' —— ' + motivationAuthor : '') + '</div>' +
+            '</div>';
+
+            content.innerHTML = html;
+            document.getElementById('summaryModal').classList.add('active');
+        }
+
+        function closeSummaryModal() {
+            document.getElementById('summaryModal').classList.remove('active');
+        }
+
+        // ========================================
+        // 模态框遮罩点击关闭
+        // ========================================
+        document.getElementById('confirmModal').addEventListener('click', function(e) {
+            if (e.target === this) closeConfirmModal();
+        });
+
+        document.getElementById('summaryModal').addEventListener('click', function(e) {
+            if (e.target === this) closeSummaryModal();
+        });
+
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDetailModal();
+        });
+
+        // ========================================
+        // 退出登录
+        // ========================================
+        function handleLogout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

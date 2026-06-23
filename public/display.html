@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诊室显示屏 - 医院呼叫系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 全屏显示屏样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Microsoft YaHei', sans-serif;
+        }
+
+        /* 背景渐变动画 */
+        .display-screen {
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, #0369a1 0%, #075985 50%, #0c4a6e 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 12s ease infinite;
+            display: flex;
+            flex-direction: column;
+            color: #ffffff;
+            position: relative;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 背景装饰粒子 */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* 区域一：顶部医生信息 */
+        .section-doctor {
+            height: 25%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            padding: 0 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .doctor-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .doctor-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .doctor-avatar .default-avatar {
+            font-size: 48px;
+            opacity: 0.8;
+        }
+
+        .doctor-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .doctor-name {
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .doctor-title {
+            font-size: 22px;
+            font-weight: 400;
+            opacity: 0.85;
+            letter-spacing: 2px;
+        }
+
+        .doctor-specialty {
+            font-size: 18px;
+            font-weight: 300;
+            opacity: 0.7;
+            letter-spacing: 1px;
+        }
+
+        /* 区域二：中央叫号信息 */
+        .section-call {
+            height: 55%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .call-number {
+            font-size: 160px;
+            font-weight: 900;
+            letter-spacing: 12px;
+            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), 0 0 80px rgba(56, 189, 248, 0.3);
+            line-height: 1;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .call-number.fade-in {
+            animation: callFadeIn 0.8s ease forwards;
+        }
+
+        @keyframes callFadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .call-number.waiting {
+            font-size: 48px;
+            font-weight: 500;
+            letter-spacing: 6px;
+            opacity: 0.6;
+            animation: waitingPulse 2.5s ease-in-out infinite;
+        }
+
+        @keyframes waitingPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.7; }
+        }
+
+        .call-patient-name {
+            font-size: 48px;
+            font-weight: 600;
+            margin-top: 16px;
+            letter-spacing: 4px;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+            transition: opacity 0.5s ease;
+        }
+
+        .call-patient-name.fade-in {
+            animation: callFadeIn 0.8s ease 0.2s forwards;
+            opacity: 0;
+        }
+
+        .call-notice {
+            font-size: 32px;
+            font-weight: 400;
+            margin-top: 24px;
+            opacity: 0.8;
+            letter-spacing: 3px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 区域三：底部信息 */
+        .section-footer {
+            height: 20%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            z-index: 1;
+            opacity: 0.6;
+        }
+
+        .hospital-name {
+            font-size: 20px;
+            font-weight: 400;
+            letter-spacing: 6px;
+        }
+
+        .room-number {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 4px;
+            opacity: 0.9;
+        }
+
+        .current-time {
+            font-size: 16px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+
+        /* 装饰分隔线 */
+        .section-doctor::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        .section-footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 1200px) {
+            .call-number {
+                font-size: 120px;
+            }
+            .call-patient-name {
+                font-size: 36px;
+            }
+            .call-notice {
+                font-size: 24px;
+            }
+            .doctor-name {
+                font-size: 32px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .section-doctor {
+                gap: 20px;
+                padding: 0 30px;
+            }
+            .doctor-avatar {
+                width: 72px;
+                height: 72px;
+            }
+            .doctor-avatar .default-avatar {
+                font-size: 36px;
+            }
+            .doctor-name {
+                font-size: 26px;
+            }
+            .doctor-title {
+                font-size: 18px;
+            }
+            .doctor-specialty {
+                font-size: 14px;
+            }
+            .call-number {
+                font-size: 80px;
+                letter-spacing: 6px;
+            }
+            .call-number.waiting {
+                font-size: 32px;
+            }
+            .call-patient-name {
+                font-size: 28px;
+            }
+            .call-notice {
+                font-size: 20px;
+            }
+            .hospital-name {
+                font-size: 16px;
+            }
+            .room-number {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="display-screen">
+        <!-- 背景粒子 -->
+        <div class="particles" id="particles"></div>
+
+        <!-- 区域一：医生信息 -->
+        <div class="section-doctor">
+            <div class="doctor-avatar" id="doctorAvatar">
+                <span class="default-avatar">&#128104;&#8205;&#9877;</span>
+            </div>
+            <div class="doctor-info">
+                <div class="doctor-name" id="doctorName">--</div>
+                <div class="doctor-title" id="doctorTitle">--</div>
+                <div class="doctor-specialty" id="doctorSpecialty">--</div>
+            </div>
+        </div>
+
+        <!-- 区域二：叫号信息 -->
+        <div class="section-call">
+            <div class="call-number waiting" id="callNumber">等待叫号中...</div>
+            <div class="call-patient-name" id="callPatientName" style="display: none;"></div>
+            <div class="call-notice" id="callNotice" style="display: none;"></div>
+        </div>
+
+        <!-- 区域三：底部信息 -->
+        <div class="section-footer">
+            <div class="hospital-name" id="hospitalName">医院呼叫系统</div>
+            <div class="room-number" id="roomNumber">--</div>
+            <div class="current-time" id="currentTime">--:--:--</div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        // ========================================
+        // 全局变量
+        // ========================================
+        var roomId = null;
+        var lastTicketNo = '';
+        var ws = null;
+        var pollTimer = null;
+        var clockTimer = null;
+
+        // ========================================
+        // 页面初始化
+        // ========================================
+        (function init() {
+            // 从URL参数获取诊室ID
+            var params = new URLSearchParams(window.location.search);
+            roomId = params.get('room_id');
+
+            if (!roomId) {
+                document.getElementById('callNumber').textContent = '请设置诊室ID';
+                document.getElementById('callNumber').classList.add('waiting');
+                return;
+            }
+
+            // 生成背景粒子
+            createParticles();
+
+            // 启动时钟
+            updateClock();
+            clockTimer = setInterval(updateClock, 1000);
+
+            // 加载初始数据
+            loadDisplayData();
+
+            // 建立WebSocket连接
+            connectWebSocket();
+
+            // 每3秒轮询作为备用
+            pollTimer = setInterval(loadDisplayData, 3000);
+        })();
+
+        // ========================================
+        // 生成背景粒子
+        // ========================================
+        function createParticles() {
+            var container = document.getElementById('particles');
+            var count = 20;
+
+            for (var i = 0; i < count; i++) {
+                var particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.width = (Math.random() * 6 + 3) + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDuration = (Math.random() * 12 + 8) + 's';
+                particle.style.animationDelay = (Math.random() * 10) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // ========================================
+        // 更新时钟
+        // ========================================
+        function updateClock() {
+            var now = new Date();
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('currentTime').textContent = hours + ':' + minutes + ':' + seconds;
+        }
+
+        // ========================================
+        // 加载显示屏数据
+        // ========================================
+        function loadDisplayData() {
+            if (!roomId) return;
+
+            var baseUrl = 'http://' + window.location.hostname + ':3000/api';
+            fetch(baseUrl + '/display/' + roomId)
+                .then(function(response) {
+                    if (!response.ok) throw new Error('请求失败');
+                    return response.json();
+                })
+                .then(function(result) {
+                    var data = result.data || result || {};
+                    updateDisplay(data);
+                })
+                .catch(function(err) {
+                    console.error('加载数据失败:', err.message);
+                });
+        }
+
+        // ========================================
+        // 更新显示内容
+        // ========================================
+        function updateDisplay(data) {
+            // 更新医生信息
+            var doctor = data.doctor || {};
+            var doctorName = doctor.name || '--';
+            var doctorTitle = doctor.title || '';
+            var doctorSpecialty = doctor.specialty || doctor.speciality || '';
+            var doctorPhoto = doctor.photo || doctor.avatar || '';
+
+            document.getElementById('doctorName').textContent = doctorName;
+            document.getElementById('doctorTitle').textContent = doctorTitle;
+            document.getElementById('doctorSpecialty').textContent = doctorSpecialty;
+
+            // 更新医生头像
+            var avatarEl = document.getElementById('doctorAvatar');
+            if (doctorPhoto) {
+                avatarEl.innerHTML = '<img src="' + doctorPhoto + '" alt="' + doctorName + '">';
+            } else {
+                avatarEl.innerHTML = '<span class="default-avatar">&#128104;&#8205;&#9877;</span>';
+            }
+
+            // 更新诊室信息
+            var room = data.room || {};
+            var roomName = room.name || '';
+            var roomDisplayId = room.display_id || room.displayId || '';
+            var hospitalName = data.hospital_name || data.hospitalName || '医院呼叫系统';
+
+            document.getElementById('hospitalName').textContent = hospitalName;
+            document.getElementById('roomNumber').textContent = roomName ? (roomName + ' (' + roomDisplayId + ')') : (roomDisplayId || '--');
+
+            // 更新叫号信息
+            var currentCall = data.current_call || data.currentCall || null;
+            var callNumberEl = document.getElementById('callNumber');
+            var callPatientNameEl = document.getElementById('callPatientName');
+            var callNoticeEl = document.getElementById('callNotice');
+
+            if (currentCall && currentCall.ticket_no) {
+                var ticketNo = currentCall.ticket_no || currentCall.ticketNo || '';
+                var patientName = maskName(currentCall.patient_name || currentCall.name || '');
+
+                // 检查是否是新叫号（号码变化时触发动画和语音）
+                var isNewCall = (ticketNo !== lastTicketNo);
+                lastTicketNo = ticketNo;
+
+                // 更新号码显示
+                callNumberEl.textContent = ticketNo;
+                callNumberEl.classList.remove('waiting');
+
+                if (isNewCall) {
+                    // 触发淡入动画
+                    callNumberEl.classList.remove('fade-in');
+                    void callNumberEl.offsetWidth; // 强制重绘
+                    callNumberEl.classList.add('fade-in');
+
+                    callPatientNameEl.classList.remove('fade-in');
+                    void callPatientNameEl.offsetWidth;
+                    callPatientNameEl.classList.add('fade-in');
+
+                    // 语音播报
+                    speakCall(ticketNo, roomName || roomDisplayId);
+                }
+
+                // 显示患者姓名
+                callPatientNameEl.textContent = patientName;
+                callPatientNameEl.style.display = 'block';
+
+                // 显示提示文字
+                callNoticeEl.textContent = '请 ' + ticketNo + ' 号患者就诊';
+                callNoticeEl.style.display = 'block';
+
+            } else {
+                // 无叫号时显示等待状态
+                lastTicketNo = '';
+                callNumberEl.textContent = '等待叫号中...';
+                callNumberEl.classList.add('waiting');
+                callNumberEl.classList.remove('fade-in');
+                callPatientNameEl.style.display = 'none';
+                callNoticeEl.style.display = 'none';
+            }
+        }
+
+        // ========================================
+        // WebSocket 连接
+        // ========================================
+        function connectWebSocket() {
+            if (!roomId) return;
+
+            var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            var wsUrl = wsProtocol + '//' + window.location.hostname + ':3000/ws?room_id=' + roomId;
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = function() {
+                    console.log('WebSocket 已连接');
+                };
+
+                ws.onmessage = function(event) {
+                    try {
+                        var data = JSON.parse(event.data);
+                        updateDisplay(data);
+                    } catch (e) {
+                        console.error('解析WebSocket消息失败:', e);
+                    }
+                };
+
+                ws.onclose = function() {
+                    console.log('WebSocket 已断开，5秒后重连...');
+                    setTimeout(connectWebSocket, 5000);
+                };
+
+                ws.onerror = function(err) {
+                    console.error('WebSocket 错误:', err);
+                    ws.close();
+                };
+            } catch (e) {
+                console.error('WebSocket 连接失败:', e);
+            }
+        }
+
+        // ========================================
+        // 语音播报
+        // ========================================
+        function speakCall(ticketNo, roomName) {
+            if (!ticketNo) return;
+
+            // 检查浏览器是否支持语音合成
+            if (!('speechSynthesis' in window)) {
+                console.warn('浏览器不支持语音合成');
+                return;
+            }
+
+            // 取消之前的播报
+            window.speechSynthesis.cancel();
+
+            var roomText = roomName ? '到' + roomName + '诊室' : '';
+            var text = '请' + ticketNo + '号' + roomText + '就诊';
+
+            var utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;  // 稍慢一点，更清晰
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+
+            // 尝试选择中文语音
+            var voices = window.speechSynthesis.getVoices();
+            var chineseVoice = voices.find(function(v) {
+                return v.lang.indexOf('zh') !== -1 || v.lang.indexOf('CN') !== -1;
+            });
+            if (chineseVoice) {
+                utterance.voice = chineseVoice;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // 确保语音列表加载完成
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                // 语音列表已更新
+            };
+        }
+    </script>
+</body>
+</html>

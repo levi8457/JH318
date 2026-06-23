@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员后台 - 医院呼叫系统</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 管理员后台布局 */
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            bottom: 0;
+            width: 220px;
+            background-color: var(--white);
+            border-right: 1px solid var(--border);
+            padding: 16px 0;
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar-menu li {
+            margin: 0;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-menu a:hover {
+            color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .sidebar-menu a.active {
+            color: var(--primary);
+            background-color: var(--primary-light);
+            border-left-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-menu a .menu-icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            margin-left: 220px;
+            margin-top: 60px;
+            padding: 24px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* 页面区域 */
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        /* 页面标题 */
+        .page-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 20px;
+        }
+
+        /* 操作栏 */
+        .action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .action-bar .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-bar .filter-bar label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            white-space: nowrap;
+        }
+
+        .action-bar .filter-bar .form-control {
+            width: auto;
+            min-width: 160px;
+        }
+
+        /* 评分表格 */
+        .score-input {
+            width: 80px;
+            padding: 6px 10px;
+            font-size: 14px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            text-align: center;
+            outline: none;
+        }
+
+        .score-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(3, 105, 161, 0.1);
+        }
+
+        .score-total-cell {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 180px;
+            }
+
+            .main-content {
+                margin-left: 180px;
+                padding: 16px;
+            }
+
+            .sidebar-menu a {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 60px;
+            }
+
+            .sidebar-menu a span.menu-text {
+                display: none;
+            }
+
+            .sidebar-menu a {
+                justify-content: center;
+                padding: 12px 0;
+            }
+
+            .main-content {
+                margin-left: 60px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+        <a class="navbar-brand" href="admin.html">
+            <div class="logo-icon">+</div>
+            <span>医院呼叫系统</span>
+        </a>
+        <div class="navbar-nav">
+            <div class="navbar-user">
+                <span class="user-name" id="navUserName">--</span>
+                <span class="badge badge-orange">管理员</span>
+                <button class="btn btn-sm btn-danger" onclick="handleLogout()">退出</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 管理员布局 -->
+    <div class="admin-layout">
+        <!-- 左侧边栏 -->
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li><a href="javascript:void(0)" class="active" data-page="dashboard" onclick="switchPage('dashboard')">
+                    <span class="menu-icon">&#9776;</span>
+                    <span class="menu-text">仪表盘</span>
+                </a></li>
+                <li><a href="javascript:void(0)" data-page="accounts" onclick="switchPage('accounts')">
+                    <span class="menu-icon">&#128100;</span>
+                    <span class="menu-text">账号管理</span>
+                </a></li>
+                <li><a href="javascript:void(0)" data-page="rooms" onclick="switchPage('rooms')">
+                    <span class="menu-icon">&#127970;</span>
+                    <span class="menu-text">诊室管理</span>
+                </a></li>
+                <li><a href="javascript:void(0)" data-page="logs" onclick="switchPage('logs')">
+                    <span class="menu-icon">&#128196;</span>
+                    <span class="menu-text">操作记录</span>
+                </a></li>
+                <li><a href="javascript:void(0)" data-page="scores" onclick="switchPage('scores')">
+                    <span class="menu-icon">&#11088;</span>
+                    <span class="menu-text">工作评分</span>
+                </a></li>
+            </ul>
+        </aside>
+
+        <!-- 右侧内容区 -->
+        <div class="main-content">
+            <!-- ==================== 仪表盘 ==================== -->
+            <div class="page-section active" id="pageDashboard">
+                <h2 class="page-title">仪表盘</h2>
+
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">&#9764;</div>
+                        <div class="stat-number" id="statTotalSeen">0</div>
+                        <div class="stat-label">今日总接诊量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">&#128736;</div>
+                        <div class="stat-number" id="statDoctorCount">0</div>
+                        <div class="stat-label">在岗医生数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">&#128119;</div>
+                        <div class="stat-number" id="statNurseCount">0</div>
+                        <div class="stat-label">在岗护士数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red">&#128101;</div>
+                        <div class="stat-number" id="statNewPatient">0</div>
+                        <div class="stat-label">今日新患者数</div>
+                    </div>
+                </div>
+
+                <!-- 医生业绩表格 -->
+                <div class="card">
+                    <div class="card-header">医生业绩</div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>医生姓名</th>
+                                    <th>诊室</th>
+                                    <th class="text-center">今日接诊量</th>
+                                    <th class="text-center">本周累计</th>
+                                    <th class="text-center">平均诊断用时</th>
+                                </tr>
+                            </thead>
+                            <tbody id="doctorPerformanceBody">
+                                <tr><td colspan="5" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 护士工作量表格 -->
+                <div class="card">
+                    <div class="card-header">护士工作量</div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>护士姓名</th>
+                                    <th class="text-center">今日录入数</th>
+                                    <th class="text-center">修改次数</th>
+                                </tr>
+                            </thead>
+                            <tbody id="nurseWorkBody">
+                                <tr><td colspan="3" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 上班记录表格 -->
+                <div class="card">
+                    <div class="card-header">上班记录</div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>角色</th>
+                                    <th>登录时间</th>
+                                    <th>下班时间</th>
+                                    <th class="text-center">在岗时长</th>
+                                </tr>
+                            </thead>
+                            <tbody id="workRecordBody">
+                                <tr><td colspan="5" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 账号管理 ==================== -->
+            <div class="page-section" id="pageAccounts">
+                <h2 class="page-title">账号管理</h2>
+
+                <div class="card">
+                    <div class="action-bar">
+                        <div></div>
+                        <button class="btn btn-primary" onclick="openAccountModal()">+ 新建账号</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>手机号</th>
+                                    <th>角色</th>
+                                    <th>科室/诊室</th>
+                                    <th class="text-center">状态</th>
+                                    <th class="text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accountsTableBody">
+                                <tr><td colspan="6" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 诊室管理 ==================== -->
+            <div class="page-section" id="pageRooms">
+                <h2 class="page-title">诊室管理</h2>
+
+                <div class="card">
+                    <div class="action-bar">
+                        <div></div>
+                        <button class="btn btn-primary" onclick="openRoomModal()">+ 新建诊室</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>诊室名称</th>
+                                    <th>显示屏标识</th>
+                                    <th>当前坐诊医生</th>
+                                    <th class="text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roomsTableBody">
+                                <tr><td colspan="4" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 操作记录 ==================== -->
+            <div class="page-section" id="pageLogs">
+                <h2 class="page-title">操作记录</h2>
+
+                <div class="card">
+                    <div class="action-bar">
+                        <div class="filter-bar">
+                            <label>操作类型：</label>
+                            <select class="form-control" id="logTypeFilter" onchange="loadLogs()">
+                                <option value="">全部</option>
+                                <option value="patient">患者修改</option>
+                                <option value="account">账号操作</option>
+                                <option value="call">叫号操作</option>
+                            </select>
+                        </div>
+                        <div></div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>操作人</th>
+                                    <th>操作类型</th>
+                                    <th>详情</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <tr><td colspan="4" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 工作评分 ==================== -->
+            <div class="page-section" id="pageScores">
+                <h2 class="page-title">工作评分</h2>
+
+                <div class="card">
+                    <div class="action-bar">
+                        <div></div>
+                        <button class="btn btn-success" onclick="saveAllScores()">保存评分</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>角色</th>
+                                    <th>日期</th>
+                                    <th class="text-center">接诊量得分</th>
+                                    <th class="text-center">考勤得分</th>
+                                    <th class="text-center">主观评价</th>
+                                    <th class="text-center">总分</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoresTableBody">
+                                <tr><td colspan="7" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 新建/编辑账号模态框 ==================== -->
+    <div class="modal-overlay" id="accountModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="accountModalTitle">新建账号</h3>
+                <button class="modal-close" onclick="closeAccountModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="accountForm" onsubmit="return false;">
+                    <input type="hidden" id="accountId">
+                    <div class="form-group">
+                        <label>姓名 <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="accountName" placeholder="请输入姓名" required>
+                    </div>
+                    <div class="form-group">
+                        <label>手机号 <span class="required">*</span></label>
+                        <input type="tel" class="form-control" id="accountPhone" placeholder="请输入手机号" maxlength="11" required>
+                    </div>
+                    <div class="form-group">
+                        <label>角色 <span class="required">*</span></label>
+                        <select class="form-control" id="accountRole" required>
+                            <option value="">请选择角色</option>
+                            <option value="doctor">医生</option>
+                            <option value="nurse">导诊护士</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>科室/诊室</label>
+                        <select class="form-control" id="accountRoom">
+                            <option value="">请选择诊室</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <select class="form-control" id="accountStatus">
+                            <option value="active">启用</option>
+                            <option value="disabled">停用</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background-color: var(--bg); color: var(--text-muted);" onclick="closeAccountModal()">取消</button>
+                <button class="btn btn-primary" id="accountSaveBtn" onclick="saveAccount()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 新建/编辑诊室模态框 ==================== -->
+    <div class="modal-overlay" id="roomModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="roomModalTitle">新建诊室</h3>
+                <button class="modal-close" onclick="closeRoomModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="roomForm" onsubmit="return false;">
+                    <input type="hidden" id="roomId">
+                    <div class="form-group">
+                        <label>诊室名称 <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="roomName" placeholder="请输入诊室名称" required>
+                    </div>
+                    <div class="form-group">
+                        <label>显示屏标识 <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="roomDisplayId" placeholder="如：ROOM-01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>当前坐诊医生</label>
+                        <select class="form-control" id="roomDoctor">
+                            <option value="">请选择医生</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" style="background-color: var(--bg); color: var(--text-muted);" onclick="closeRoomModal()">取消</button>
+                <button class="btn btn-primary" id="roomSaveBtn" onclick="saveRoom()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        // ========================================
+        // 全局变量
+        // ========================================
+        var dashboardData = null;
+        var accountsData = [];
+        var roomsData = [];
+        var doctorsList = [];
+
+        // ========================================
+        // 页面初始化
+        // ========================================
+        (function init() {
+            // 检查登录状态
+            var token = localStorage.getItem('token');
+            var userStr = localStorage.getItem('user');
+            if (!token || !userStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // 检查角色
+            var user;
+            try {
+                user = JSON.parse(userStr);
+            } catch (e) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            if (user.role !== 'admin') {
+                var rolePageMap = {
+                    'doctor': 'doctor.html',
+                    'nurse': 'nurse.html'
+                };
+                var targetPage = rolePageMap[user.role];
+                if (targetPage) {
+                    window.location.href = targetPage;
+                } else {
+                    window.location.href = 'login.html';
+                }
+                return;
+            }
+
+            // 显示用户名
+            document.getElementById('navUserName').textContent = user.name || user.phone || '--';
+
+            // 加载仪表盘数据
+            loadDashboard();
+        })();
+
+        // ========================================
+        // 页面切换
+        // ========================================
+        function switchPage(pageName) {
+            // 更新侧边栏高亮
+            var links = document.querySelectorAll('.sidebar-menu a');
+            links.forEach(function(link) {
+                link.classList.remove('active');
+                if (link.getAttribute('data-page') === pageName) {
+                    link.classList.add('active');
+                }
+            });
+
+            // 切换内容区域
+            var sections = document.querySelectorAll('.page-section');
+            sections.forEach(function(section) {
+                section.classList.remove('active');
+            });
+
+            var pageMap = {
+                'dashboard': 'pageDashboard',
+                'accounts': 'pageAccounts',
+                'rooms': 'pageRooms',
+                'logs': 'pageLogs',
+                'scores': 'pageScores'
+            };
+
+            var targetSection = document.getElementById(pageMap[pageName]);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+
+            // 按需加载数据
+            if (pageName === 'dashboard') {
+                loadDashboard();
+            } else if (pageName === 'accounts') {
+                loadAccounts();
+            } else if (pageName === 'rooms') {
+                loadRooms();
+            } else if (pageName === 'logs') {
+                loadLogs();
+            } else if (pageName === 'scores') {
+                loadScores();
+            }
+        }
+
+        // ========================================
+        // 仪表盘
+        // ========================================
+        function loadDashboard() {
+            api.get('/admin/dashboard').then(function(result) {
+                var data = result.data || result || {};
+                dashboardData = data;
+
+                // 统计卡片
+                var stats = data.stats || {};
+                document.getElementById('statTotalSeen').textContent = stats.total_seen || stats.totalSeen || 0;
+                document.getElementById('statDoctorCount').textContent = stats.doctor_count || stats.doctorCount || 0;
+                document.getElementById('statNurseCount').textContent = stats.nurse_count || stats.nurseCount || 0;
+                document.getElementById('statNewPatient').textContent = stats.new_patient || stats.newPatient || 0;
+
+                // 医生业绩
+                var doctors = data.doctor_performance || data.doctorPerformance || [];
+                var doctorBody = document.getElementById('doctorPerformanceBody');
+                if (doctors.length === 0) {
+                    doctorBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding: 40px;">暂无数据</td></tr>';
+                } else {
+                    var html = '';
+                    doctors.forEach(function(d) {
+                        html += '<tr>' +
+                            '<td>' + (d.name || '--') + '</td>' +
+                            '<td>' + (d.room_name || d.roomName || '--') + '</td>' +
+                            '<td class="text-center">' + (d.today_seen || d.todaySeen || 0) + '</td>' +
+                            '<td class="text-center">' + (d.week_seen || d.weekSeen || 0) + '</td>' +
+                            '<td class="text-center">' + (d.avg_time || d.avgTime || '--') + '</td>' +
+                        '</tr>';
+                    });
+                    doctorBody.innerHTML = html;
+                }
+
+                // 护士工作量
+                var nurses = data.nurse_workload || data.nurseWorkload || [];
+                var nurseBody = document.getElementById('nurseWorkBody');
+                if (nurses.length === 0) {
+                    nurseBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted" style="padding: 40px;">暂无数据</td></tr>';
+                } else {
+                    var html = '';
+                    nurses.forEach(function(n) {
+                        html += '<tr>' +
+                            '<td>' + (n.name || '--') + '</td>' +
+                            '<td class="text-center">' + (n.today_entries || n.todayEntries || 0) + '</td>' +
+                            '<td class="text-center">' + (n.modify_count || n.modifyCount || 0) + '</td>' +
+                        '</tr>';
+                    });
+                    nurseBody.innerHTML = html;
+                }
+
+                // 上班记录
+                var workRecords = data.work_records || data.workRecords || [];
+                var workBody = document.getElementById('workRecordBody');
+                if (workRecords.length === 0) {
+                    workBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding: 40px;">暂无数据</td></tr>';
+                } else {
+                    var html = '';
+                    workRecords.forEach(function(r) {
+                        html += '<tr>' +
+                            '<td>' + (r.name || '--') + '</td>' +
+                            '<td><span class="badge badge-blue">' + getRoleName(r.role || '') + '</span></td>' +
+                            '<td>' + formatDateTime(r.login_time || r.loginTime || '') + '</td>' +
+                            '<td>' + (r.logout_time || r.logoutTime ? formatDateTime(r.logout_time || r.logoutTime) : '<span class="text-muted">在岗中</span>') + '</td>' +
+                            '<td class="text-center">' + (r.work_duration || r.workDuration || '--') + '</td>' +
+                        '</tr>';
+                    });
+                    workBody.innerHTML = html;
+                }
+
+                // 缓存医生列表（用于诊室管理）
+                doctorsList = doctors;
+
+            }).catch(function(err) {
+                showNotification('加载仪表盘数据失败：' + err.message, 'error');
+            });
+        }
+
+        // ========================================
+        // 账号管理
+        // ========================================
+        function loadAccounts() {
+            api.get('/admin/accounts').then(function(result) {
+                accountsData = result.data || result || [];
+                var tbody = document.getElementById('accountsTableBody');
+
+                if (accountsData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding: 40px;">暂无账号数据</td></tr>';
+                    return;
+                }
+
+                var html = '';
+                accountsData.forEach(function(a) {
+                    var statusBadge = a.status === 'active'
+                        ? '<span class="badge badge-green">启用</span>'
+                        : '<span class="badge badge-red">停用</span>';
+
+                    html += '<tr>' +
+                        '<td>' + (a.name || '--') + '</td>' +
+                        '<td>' + (a.phone || '--') + '</td>' +
+                        '<td><span class="badge badge-blue">' + getRoleName(a.role || '') + '</span></td>' +
+                        '<td>' + (a.room_name || a.roomName || '--') + '</td>' +
+                        '<td class="text-center">' + statusBadge + '</td>' +
+                        '<td class="text-center">' +
+                            '<button class="btn btn-sm btn-primary" style="margin-right: 4px;" onclick="editAccount(' + (a.id || '') + ')">编辑</button>' +
+                            '<button class="btn btn-sm btn-warning" style="margin-right: 4px;" onclick="resetPassword(' + (a.id || '') + ')">重置密码</button>' +
+                            '<button class="btn btn-sm btn-danger" onclick="toggleAccountStatus(' + (a.id || '') + ', \'' + (a.status || '') + '\')">停用</button>' +
+                        '</td>' +
+                    '</tr>';
+                });
+
+                tbody.innerHTML = html;
+            }).catch(function(err) {
+                showNotification('加载账号列表失败：' + err.message, 'error');
+            });
+        }
+
+        function openAccountModal(account) {
+            document.getElementById('accountForm').reset();
+            document.getElementById('accountId').value = '';
+            document.getElementById('accountModalTitle').textContent = '新建账号';
+
+            // 加载诊室列表
+            loadRoomOptions('accountRoom');
+
+            if (account) {
+                document.getElementById('accountModalTitle').textContent = '编辑账号';
+                document.getElementById('accountId').value = account.id || '';
+                document.getElementById('accountName').value = account.name || '';
+                document.getElementById('accountPhone').value = account.phone || '';
+                document.getElementById('accountRole').value = account.role || '';
+                document.getElementById('accountRoom').value = account.room_id || account.roomId || '';
+                document.getElementById('accountStatus').value = account.status || 'active';
+            }
+
+            document.getElementById('accountModal').classList.add('active');
+        }
+
+        function closeAccountModal() {
+            document.getElementById('accountModal').classList.remove('active');
+        }
+
+        function editAccount(id) {
+            var account = accountsData.find(function(a) { return a.id === id; });
+            if (account) {
+                openAccountModal(account);
+            }
+        }
+
+        function saveAccount() {
+            var id = document.getElementById('accountId').value;
+            var name = document.getElementById('accountName').value.trim();
+            var phone = document.getElementById('accountPhone').value.trim();
+            var role = document.getElementById('accountRole').value;
+            var roomId = document.getElementById('accountRoom').value;
+            var status = document.getElementById('accountStatus').value;
+
+            if (!name) { showNotification('请输入姓名', 'warning'); return; }
+            if (!phone) { showNotification('请输入手机号', 'warning'); return; }
+            if (!/^1\d{10}$/.test(phone)) { showNotification('请输入正确的手机号', 'warning'); return; }
+            if (!role) { showNotification('请选择角色', 'warning'); return; }
+
+            var data = {
+                name: name,
+                phone: phone,
+                role: role,
+                room_id: roomId ? parseInt(roomId) : null,
+                status: status
+            };
+
+            var saveBtn = document.getElementById('accountSaveBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+
+            var promise;
+            if (id) {
+                promise = api.put('/admin/accounts/' + id, data);
+            } else {
+                promise = api.post('/admin/accounts', data);
+            }
+
+            promise.then(function() {
+                showNotification(id ? '账号更新成功' : '账号创建成功', 'success');
+                closeAccountModal();
+                loadAccounts();
+            }).catch(function(err) {
+                showNotification('操作失败：' + err.message, 'error');
+            }).finally(function() {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '保存';
+            });
+        }
+
+        function resetPassword(id) {
+            if (!confirm('确定要重置该账号的密码吗？')) return;
+
+            api.put('/admin/accounts/' + id + '/reset-password', {}).then(function() {
+                showNotification('密码已重置', 'success');
+            }).catch(function(err) {
+                showNotification('重置密码失败：' + err.message, 'error');
+            });
+        }
+
+        function toggleAccountStatus(id, currentStatus) {
+            var newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+            var actionText = newStatus === 'disabled' ? '停用' : '启用';
+
+            if (!confirm('确定要' + actionText + '该账号吗？')) return;
+
+            api.put('/admin/accounts/' + id, { status: newStatus }).then(function() {
+                showNotification('账号已' + actionText, 'success');
+                loadAccounts();
+            }).catch(function(err) {
+                showNotification('操作失败：' + err.message, 'error');
+            });
+        }
+
+        // ========================================
+        // 诊室管理
+        // ========================================
+        function loadRooms() {
+            api.get('/admin/rooms').then(function(result) {
+                roomsData = result.data || result || [];
+                var tbody = document.getElementById('roomsTableBody');
+
+                if (roomsData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding: 40px;">暂无诊室数据</td></tr>';
+                    return;
+                }
+
+                var html = '';
+                roomsData.forEach(function(r) {
+                    html += '<tr>' +
+                        '<td>' + (r.name || '--') + '</td>' +
+                        '<td><span class="badge badge-blue">' + (r.display_id || r.displayId || '--') + '</span></td>' +
+                        '<td>' + (r.doctor_name || r.doctorName || '<span class="text-muted">未分配</span>') + '</td>' +
+                        '<td class="text-center">' +
+                            '<button class="btn btn-sm btn-primary" style="margin-right: 4px;" onclick="editRoom(' + (r.id || '') + ')">编辑</button>' +
+                        '</td>' +
+                    '</tr>';
+                });
+
+                tbody.innerHTML = html;
+            }).catch(function(err) {
+                showNotification('加载诊室列表失败：' + err.message, 'error');
+            });
+        }
+
+        function loadRoomOptions(selectId) {
+            api.get('/admin/rooms').then(function(result) {
+                var rooms = result.data || result || [];
+                var select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">请选择诊室</option>';
+                rooms.forEach(function(r) {
+                    var opt = document.createElement('option');
+                    opt.value = r.id || '';
+                    opt.textContent = r.name || '--';
+                    select.appendChild(opt);
+                });
+            }).catch(function(err) {
+                console.error('加载诊室选项失败:', err.message);
+            });
+        }
+
+        function openRoomModal(room) {
+            document.getElementById('roomForm').reset();
+            document.getElementById('roomId').value = '';
+            document.getElementById('roomModalTitle').textContent = '新建诊室';
+
+            // 加载医生选项
+            loadDoctorOptions('roomDoctor');
+
+            if (room) {
+                document.getElementById('roomModalTitle').textContent = '编辑诊室';
+                document.getElementById('roomId').value = room.id || '';
+                document.getElementById('roomName').value = room.name || '';
+                document.getElementById('roomDisplayId').value = room.display_id || room.displayId || '';
+                document.getElementById('roomDoctor').value = room.doctor_id || room.doctorId || '';
+            }
+
+            document.getElementById('roomModal').classList.add('active');
+        }
+
+        function closeRoomModal() {
+            document.getElementById('roomModal').classList.remove('active');
+        }
+
+        function editRoom(id) {
+            var room = roomsData.find(function(r) { return r.id === id; });
+            if (room) {
+                openRoomModal(room);
+            }
+        }
+
+        function loadDoctorOptions(selectId) {
+            api.get('/admin/accounts').then(function(result) {
+                var accounts = result.data || result || [];
+                var doctors = accounts.filter(function(a) { return a.role === 'doctor'; });
+                var select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">请选择医生</option>';
+                doctors.forEach(function(d) {
+                    var opt = document.createElement('option');
+                    opt.value = d.id || '';
+                    opt.textContent = d.name || '--';
+                    select.appendChild(opt);
+                });
+            }).catch(function(err) {
+                console.error('加载医生选项失败:', err.message);
+            });
+        }
+
+        function saveRoom() {
+            var id = document.getElementById('roomId').value;
+            var name = document.getElementById('roomName').value.trim();
+            var displayId = document.getElementById('roomDisplayId').value.trim();
+            var doctorId = document.getElementById('roomDoctor').value;
+
+            if (!name) { showNotification('请输入诊室名称', 'warning'); return; }
+            if (!displayId) { showNotification('请输入显示屏标识', 'warning'); return; }
+
+            var data = {
+                name: name,
+                display_id: displayId,
+                doctor_id: doctorId ? parseInt(doctorId) : null
+            };
+
+            var saveBtn = document.getElementById('roomSaveBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '保存中...';
+
+            var promise;
+            if (id) {
+                promise = api.put('/admin/rooms/' + id, data);
+            } else {
+                promise = api.post('/admin/rooms', data);
+            }
+
+            promise.then(function() {
+                showNotification(id ? '诊室更新成功' : '诊室创建成功', 'success');
+                closeRoomModal();
+                loadRooms();
+            }).catch(function(err) {
+                showNotification('操作失败：' + err.message, 'error');
+            }).finally(function() {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '保存';
+            });
+        }
+
+        // ========================================
+        // 操作记录
+        // ========================================
+        function loadLogs() {
+            var type = document.getElementById('logTypeFilter').value;
+            var url = '/admin/logs';
+            if (type) {
+                url += '?type=' + encodeURIComponent(type);
+            }
+
+            api.get(url).then(function(result) {
+                var logs = result.data || result || [];
+                var tbody = document.getElementById('logsTableBody');
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding: 40px;">暂无操作记录</td></tr>';
+                    return;
+                }
+
+                var typeMap = {
+                    'patient': '患者修改',
+                    'account': '账号操作',
+                    'call': '叫号操作'
+                };
+
+                var html = '';
+                logs.forEach(function(log) {
+                    var logType = log.type || '';
+                    var typeBadge = '<span class="badge badge-blue">' + (typeMap[logType] || logType || '--') + '</span>';
+
+                    html += '<tr>' +
+                        '<td>' + formatDateTime(log.created_at || log.createdAt || '') + '</td>' +
+                        '<td>' + (log.operator_name || log.operatorName || '--') + '</td>' +
+                        '<td>' + typeBadge + '</td>' +
+                        '<td>' + (log.detail || log.details || '--') + '</td>' +
+                    '</tr>';
+                });
+
+                tbody.innerHTML = html;
+            }).catch(function(err) {
+                showNotification('加载操作记录失败：' + err.message, 'error');
+            });
+        }
+
+        // ========================================
+        // 工作评分
+        // ========================================
+        function loadScores() {
+            api.get('/admin/dashboard').then(function(result) {
+                var data = result.data || result || {};
+                var staffList = data.scores || data.staff_scores || data.staffScores || [];
+                var tbody = document.getElementById('scoresTableBody');
+
+                if (staffList.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding: 40px;">暂无评分数据</td></tr>';
+                    return;
+                }
+
+                var html = '';
+                staffList.forEach(function(s) {
+                    var visitScore = s.visit_score || s.visitScore || 0;
+                    var attendanceScore = s.attendance_score || s.attendanceScore || 0;
+                    var subjectiveScore = s.subjective_score || s.subjectiveScore || '';
+                    var totalScore = s.total_score || s.totalScore || 0;
+
+                    html += '<tr data-account-id="' + (s.account_id || s.accountId || '') + '">' +
+                        '<td>' + (s.name || '--') + '</td>' +
+                        '<td><span class="badge badge-blue">' + getRoleName(s.role || '') + '</span></td>' +
+                        '<td>' + formatDate(s.date || new Date()) + '</td>' +
+                        '<td class="text-center">' + visitScore + '</td>' +
+                        '<td class="text-center">' + attendanceScore + '</td>' +
+                        '<td class="text-center">' +
+                            '<input type="number" class="score-input" min="1" max="100" value="' + subjectiveScore + '" data-field="subjective_score">' +
+                        '</td>' +
+                        '<td class="text-center score-total-cell">' + totalScore + '</td>' +
+                    '</tr>';
+                });
+
+                tbody.innerHTML = html;
+
+                // 监听主观评价输入变化，实时更新总分
+                var inputs = tbody.querySelectorAll('.score-input');
+                inputs.forEach(function(input) {
+                    input.addEventListener('input', function() {
+                        var row = this.closest('tr');
+                        var visitScore = parseInt(row.querySelector('td:nth-child(4)').textContent) || 0;
+                        var attendanceScore = parseInt(row.querySelector('td:nth-child(5)').textContent) || 0;
+                        var subjectiveVal = parseInt(this.value) || 0;
+                        if (subjectiveVal < 1) subjectiveVal = 1;
+                        if (subjectiveVal > 100) subjectiveVal = 100;
+                        var total = visitScore + attendanceScore + subjectiveVal;
+                        row.querySelector('.score-total-cell').textContent = total;
+                    });
+                });
+
+            }).catch(function(err) {
+                showNotification('加载评分数据失败：' + err.message, 'error');
+            });
+        }
+
+        function saveAllScores() {
+            var rows = document.querySelectorAll('#scoresTableBody tr[data-account-id]');
+            var promises = [];
+
+            rows.forEach(function(row) {
+                var accountId = row.getAttribute('data-account-id');
+                if (!accountId) return;
+
+                var subjectiveInput = row.querySelector('.score-input');
+                var subjectiveScore = parseInt(subjectiveInput.value) || 0;
+                if (subjectiveScore < 1) subjectiveScore = 1;
+                if (subjectiveScore > 100) subjectiveScore = 100;
+
+                var visitScore = parseInt(row.querySelector('td:nth-child(4)').textContent) || 0;
+                var attendanceScore = parseInt(row.querySelector('td:nth-child(5)').textContent) || 0;
+                var totalScore = visitScore + attendanceScore + subjectiveScore;
+
+                promises.push(
+                    api.post('/admin/scores/' + accountId, {
+                        subjective_score: subjectiveScore,
+                        total_score: totalScore
+                    })
+                );
+            });
+
+            if (promises.length === 0) {
+                showNotification('没有需要保存的评分数据', 'warning');
+                return;
+            }
+
+            Promise.all(promises).then(function() {
+                showNotification('评分保存成功', 'success');
+            }).catch(function(err) {
+                showNotification('保存评分失败：' + err.message, 'error');
+            });
+        }
+
+        // ========================================
+        // 模态框遮罩点击关闭
+        // ========================================
+        document.getElementById('accountModal').addEventListener('click', function(e) {
+            if (e.target === this) closeAccountModal();
+        });
+
+        document.getElementById('roomModal').addEventListener('click', function(e) {
+            if (e.target === this) closeRoomModal();
+        });
+
+        // ========================================
+        // 退出登录
+        // ========================================
+        function handleLogout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>
