@@ -383,20 +383,28 @@ router.get('/rooms', (req, res) => {
  */
 router.post('/rooms', (req, res) => {
   try {
-    const { name, display_code } = req.body;
+    const { name, display_code, display_id, current_doctor_id, doctor_id } = req.body;
 
     if (!name) {
       return fail(res, '请输入诊室名称');
     }
 
+    const code = display_code || display_id || '';
+    const docId = current_doctor_id || doctor_id || null;
+
     const result = db.prepare(`
-      INSERT INTO rooms (name, display_code) VALUES (?, ?)
-    `).run(name, display_code || '');
+      INSERT INTO rooms (name, display_code, current_doctor_id) VALUES (?, ?, ?)
+    `).run(name, code, docId ? parseInt(docId) : null);
+
+    // 如果绑定了医生，同步更新医生的 room_id
+    if (docId) {
+      db.prepare('UPDATE accounts SET room_id = ? WHERE id = ?').run(result.lastInsertRowid, parseInt(docId));
+    }
 
     logOperation(
       req.user.id, req.user.name,
       'create_room', 'room', result.lastInsertRowid,
-      { name, display_code }
+      { name, display_code: code, doctor_id: docId }
     );
 
     return success(res, { id: result.lastInsertRowid }, '诊室创建成功');
@@ -413,7 +421,7 @@ router.post('/rooms', (req, res) => {
 router.put('/rooms/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const { name, display_code, current_doctor_id } = req.body;
+    const { name, display_code, display_id, current_doctor_id, doctor_id } = req.body;
 
     const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(id);
     if (!room) {
@@ -425,7 +433,9 @@ router.put('/rooms/:id', (req, res) => {
 
     if (name !== undefined) { updates.push('name = ?'); values.push(name); }
     if (display_code !== undefined) { updates.push('display_code = ?'); values.push(display_code); }
+    if (display_id !== undefined) { updates.push('display_code = ?'); values.push(display_id); }
     if (current_doctor_id !== undefined) { updates.push('current_doctor_id = ?'); values.push(current_doctor_id || null); }
+    if (doctor_id !== undefined) { updates.push('current_doctor_id = ?'); values.push(doctor_id || null); }
 
     if (updates.length === 0) {
       return fail(res, '没有需要修改的字段');

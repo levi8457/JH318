@@ -364,14 +364,16 @@
                         <table class="table">
                             <thead>
                                 <tr>
+                                    <th>诊室ID</th>
                                     <th>诊室名称</th>
                                     <th>显示屏标识</th>
+                                    <th>显示屏地址</th>
                                     <th>当前坐诊医生</th>
                                     <th class="text-center">操作</th>
                                 </tr>
                             </thead>
                             <tbody id="roomsTableBody">
-                                <tr><td colspan="4" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
+                                <tr><td colspan="6" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -915,16 +917,23 @@
                 var tbody = document.getElementById('roomsTableBody');
 
                 if (roomsData.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding: 40px;">暂无诊室数据</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding: 40px;">暂无诊室数据</td></tr>';
                     return;
                 }
 
+                var baseUrl = window.location.origin + window.location.pathname.replace(/admin\.html.*$/, '');
                 var html = '';
                 roomsData.forEach(function(r) {
+                    var displayUrl = baseUrl + 'display.html?room_id=' + r.id;
+                    var doctorInfo = (r.doctor_name || r.doctorName || '');
+                    if (r.doctor_title || r.doctorTitle) doctorInfo += ' (' + (r.doctor_title || r.doctorTitle) + ')';
+
                     html += '<tr>' +
+                        '<td><span class="badge badge-blue">' + r.id + '</span></td>' +
                         '<td>' + (r.name || '--') + '</td>' +
-                        '<td><span class="badge badge-blue">' + (r.display_id || r.displayId || '--') + '</span></td>' +
-                        '<td>' + (r.doctor_name || r.doctorName || '<span class="text-muted">未分配</span>') + '</td>' +
+                        '<td>' + (r.display_code || r.displayCode || '--') + '</td>' +
+                        '<td><a href="' + displayUrl + '" target="_blank" style="color:var(--primary);font-size:12px;word-break:break-all;">' + displayUrl + '</a></td>' +
+                        '<td>' + (doctorInfo || '<span class="text-muted">未分配</span>') + '</td>' +
                         '<td class="text-center">' +
                             '<button class="btn btn-sm btn-primary" style="margin-right: 4px;" onclick="editRoom(' + (r.id || '') + ')">编辑</button>' +
                         '</td>' +
@@ -965,8 +974,8 @@
                 document.getElementById('roomModalTitle').textContent = '编辑诊室';
                 document.getElementById('roomId').value = room.id || '';
                 document.getElementById('roomName').value = room.name || '';
-                document.getElementById('roomDisplayId').value = room.display_id || room.displayId || '';
-                document.getElementById('roomDoctor').value = room.doctor_id || room.doctorId || '';
+                document.getElementById('roomDisplayId').value = room.display_code || room.displayCode || room.display_id || room.displayId || '';
+                document.getElementById('roomDoctor').value = room.current_doctor_id || room.currentDoctorId || room.doctor_id || room.doctorId || '';
             }
 
             document.getElementById('roomModal').classList.add('active');
