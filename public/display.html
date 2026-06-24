@@ -596,11 +596,9 @@
             if (waitingList.length > 0) {
                 waitingListEl.innerHTML = waitingList.map(function(p) {
                     var name = p.patient_name_masked || p.patient_name || p.name || '';
-                    var symptom = p.symptom_name || p.symptom || '';
                     return '<li>' +
                         '<span class="ticket">' + (p.ticket_number || p.ticketNo || '') + '</span>' +
-                        '<span class="name">' + name + (symptom ? ' · ' : '') + '</span>' +
-                        '<span class="symptom">' + symptom + '</span>' +
+                        '<span class="name">' + name + '</span>' +
                         '</li>';
                 }).join('');
             } else {
@@ -640,9 +638,8 @@
                     speakCall(ticketNo, roomName || roomDisplayId);
                 }
 
-                // 显示患者姓名 + 病症
-                var callSymptom = currentCall.symptom_name || currentCall.symptom || '';
-                callPatientNameEl.textContent = patientName + (callSymptom ? ' · ' + callSymptom : '');
+                // 显示患者脱敏姓名（仅显示姓名，不显示病症等隐私信息）
+                callPatientNameEl.textContent = patientName;
                 callPatientNameEl.style.display = 'block';
 
                 // 显示提示文字
