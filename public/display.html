@@ -493,14 +493,15 @@
             document.getElementById('roomNumber').textContent = roomName ? (roomName + ' (' + roomDisplayId + ')') : (roomDisplayId || '--');
 
             // 更新叫号信息
-            var currentCall = data.current_call || data.currentCall || null;
+            // 后端返回 current_patient，兼容旧字段名 current_call/currentCall
+            var currentCall = data.current_patient || data.current_call || data.currentCall || null;
             var callNumberEl = document.getElementById('callNumber');
             var callPatientNameEl = document.getElementById('callPatientName');
             var callNoticeEl = document.getElementById('callNotice');
 
-            if (currentCall && currentCall.ticket_no) {
-                var ticketNo = currentCall.ticket_no || currentCall.ticketNo || '';
-                var patientName = maskName(currentCall.patient_name || currentCall.name || '');
+            if (currentCall && (currentCall.ticket_number || currentCall.ticket_no)) {
+                var ticketNo = currentCall.ticket_number || currentCall.ticket_no || currentCall.ticketNo || '';
+                var patientName = maskName(currentCall.patient_name_masked || currentCall.patient_name || currentCall.name || '');
 
                 // 检查是否是新叫号（号码变化时触发动画和语音）
                 var isNewCall = (ticketNo !== lastTicketNo);
