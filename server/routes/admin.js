@@ -517,4 +517,88 @@ router.put('/doctors/:id/profile', (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/export/patients
+ * 导出今日患者信息为 CSV
+ */
+router.get('/export/patients', (req, res) => {
+  try {
+    const today = getTodayStr();
+
+    // 查询今日所有患者信息
+    const patients = db.prepare(`
+      SELECT
+        p.id,
+        p.name,
+        p.age,
+        p.symptom_name,
+        p.symptoms,
+        p.ticket_number,
+        p.source,
+        p.is_reserved,
+        a.name AS doctor_name,
+        p.status,
+        p.created_at,
+        p.remarks
+      FROM patients p
+      LEFT JOIN accounts a ON p.doctor_id = a.id
+      WHERE p.created_at LIKE ?
+      ORDER BY p.created_at ASC
+    `).all(`${today}%`);
+
+    // CSV 表头
+    const headers = [
+      '编号', '姓名', '年龄', '病症', '症状描述', '号码牌',
+      '来源', '是否预约', '就诊医生', '状态', '创建时间', '备注'
+    ];
+
+    // 状态映射
+    const statusMap = {
+      'waiting': '等待中',
+      'calling': '叫号中',
+      'done': '已完成',
+      'skipped': '已跳过'
+    };
+
+    // 构建 CSV 行
+    const rows = patients.map((p) => {
+      return [
+        p.id,
+        p.name || '',
+        p.age || '',
+        p.symptom_name || '',
+        p.symptoms || '',
+        p.ticket_number || '',
+        p.source || '',
+        p.is_reserved ? '是' : '否',
+        p.doctor_name || '',
+        statusMap[p.status] || p.status || '',
+        p.created_at || '',
+        p.remarks || ''
+      ].map((field) => {
+        // 处理包含逗号、引号或换行符的字段
+        const str = String(field || '');
+        if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+          return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+      }).join(',');
+    });
+
+    // 添加 BOM 确保 Excel 正确显示中文
+    const bom = '\uFEFF';
+    const csvContent = bom + headers.join(',') + '\n' + rows.join('\n');
+
+    // 设置响应头
+    const filename = `patients_${today}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    return res.send(csvContent);
+  } catch (err) {
+    console.error('导出患者信息失败:', err);
+    return fail(res, '导出患者信息失败，服务器错误');
+  }
+});
+
 module.exports = router;

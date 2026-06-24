@@ -367,6 +367,7 @@
         // 全局变量
         // ========================================
         var roomId = null;
+        var doctorId = null;
         var lastTicketNo = '';
         var ws = null;
         var pollTimer = null;
@@ -376,12 +377,13 @@
         // 页面初始化
         // ========================================
         (function init() {
-            // 从URL参数获取诊室ID
+            // 从URL参数获取诊室ID或医生ID
             var params = new URLSearchParams(window.location.search);
             roomId = params.get('room_id');
+            doctorId = params.get('doctor_id');
 
-            if (!roomId) {
-                document.getElementById('callNumber').textContent = '请设置诊室ID';
+            if (!roomId && !doctorId) {
+                document.getElementById('callNumber').textContent = '请设置诊室ID或医生ID';
                 document.getElementById('callNumber').classList.add('waiting');
                 return;
             }
@@ -437,10 +439,14 @@
         // 加载显示屏数据
         // ========================================
         function loadDisplayData() {
-            if (!roomId) return;
+            if (!roomId && !doctorId) return;
 
             var baseUrl = 'http://' + window.location.host + '/api';
-            fetch(baseUrl + '/display/' + roomId)
+            var apiUrl = roomId
+                ? (baseUrl + '/display/' + roomId)
+                : (baseUrl + '/display/doctor/' + doctorId);
+
+            fetch(apiUrl)
                 .then(function(response) {
                     if (!response.ok) throw new Error('请求失败');
                     return response.json();
@@ -541,10 +547,12 @@
         // WebSocket 连接
         // ========================================
         function connectWebSocket() {
-            if (!roomId) return;
+            if (!roomId && !doctorId) return;
 
             var wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            var wsUrl = wsProtocol + '//' + window.location.host + '/ws?room_id=' + roomId;
+            var wsUrl = roomId
+                ? (wsProtocol + '//' + window.location.host + '/ws?room_id=' + roomId)
+                : (wsProtocol + '//' + window.location.host + '/ws?doctor_id=' + doctorId);
 
             try {
                 ws = new WebSocket(wsUrl);

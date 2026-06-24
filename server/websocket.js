@@ -1,6 +1,9 @@
 /**
  * WebSocket 服务
- * 当医生叫号时，向对应诊室的显示屏推送更新消息
+ * 支持两种订阅模式：
+ * 1. room_id 模式：?room_id=1（传统方式，兼容现有显示屏）
+ * 2. doctor_id 模式：?doctor_id=1（新方式，医生登录后自动关联）
+ *
  * 消息格式: { type: 'call_update', room_id, data: { ticket_number, patient_name_masked, doctor_name } }
  */
 const WebSocket = require('ws');
@@ -17,14 +20,21 @@ function initWebSocket(server) {
   wss.on('connection', (ws, req) => {
     console.log(`[WebSocket] 新客户端连接: ${req.socket.remoteAddress}`);
 
-    // 解析 URL 参数获取 room_id
+    // 解析 URL 参数获取 room_id 和 doctor_id
     const url = new URL(req.url, `http://${req.headers.host}`);
     const roomId = url.searchParams.get('room_id');
+    const doctorId = url.searchParams.get('doctor_id');
 
     if (roomId) {
       ws.roomId = parseInt(roomId);
       ws.isAlive = true;
       console.log(`[WebSocket] 客户端订阅诊室: room_id=${roomId}`);
+    }
+
+    if (doctorId) {
+      ws.doctorId = parseInt(doctorId);
+      ws.isAlive = true;
+      console.log(`[WebSocket] 客户端订阅医生: doctor_id=${doctorId}`);
     }
 
     // 心跳检测
@@ -33,7 +43,7 @@ function initWebSocket(server) {
     });
 
     ws.on('close', () => {
-      console.log(`[WebSocket] 客户端断开连接: room_id=${ws.roomId || '未订阅'}`);
+      console.log(`[WebSocket] 客户端断开连接: room_id=${ws.roomId || '未订阅'}, doctor_id=${ws.doctorId || '未订阅'}`);
     });
 
     ws.on('error', (err) => {
@@ -86,6 +96,30 @@ function broadcastToRoom(roomId, message) {
 }
 
 /**
+ * 向指定医生的所有显示屏客户端广播消息
+ * @param {number} doctorId - 医生ID
+ * @param {Object} message - 消息内容
+ */
+function broadcastToDoctor(doctorId, message) {
+  if (!wss) {
+    console.warn('[WebSocket] 服务未初始化，无法推送消息');
+    return;
+  }
+
+  const messageStr = JSON.stringify(message);
+  let sentCount = 0;
+
+  wss.clients.forEach((ws) => {
+    if (ws.readyState === WebSocket.OPEN && ws.doctorId === doctorId) {
+      ws.send(messageStr);
+      sentCount++;
+    }
+  });
+
+  console.log(`[WebSocket] 向医生 ${doctorId} 推送消息，已发送 ${sentCount} 个客户端:`, message.type);
+}
+
+/**
  * 获取 WebSocket 服务器实例
  */
 function getWSS() {
@@ -95,5 +129,6 @@ function getWSS() {
 module.exports = {
   initWebSocket,
   broadcastToRoom,
+  broadcastToDoctor,
   getWSS
 };

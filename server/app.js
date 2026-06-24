@@ -83,12 +83,12 @@ app.use('/api/display', displayRoutes);
 const server = http.createServer(app);
 
 // ==================== 集成 WebSocket ====================
-const { initWebSocket, broadcastToRoom } = require('./websocket');
+const { initWebSocket, broadcastToRoom, broadcastToDoctor } = require('./websocket');
 initWebSocket(server);
 
-// 将 broadcastToRoom 注入到 doctor 路由
+// 将 broadcastToRoom 和 broadcastToDoctor 注入到 doctor 路由
 const doctorModule = require('./routes/doctor');
-doctorModule.setBroadcastFn(broadcastToRoom);
+doctorModule.setBroadcastFn(broadcastToRoom, broadcastToDoctor);
 
 // ==================== 错误处理 ====================
 

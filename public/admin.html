@@ -219,6 +219,10 @@
                     <span class="menu-icon">&#128196;</span>
                     <span class="menu-text">操作记录</span>
                 </a></li>
+                <li><a href="javascript:void(0)" data-page="export" onclick="switchPage('export')">
+                    <span class="menu-icon">&#128229;</span>
+                    <span class="menu-text">数据导出</span>
+                </a></li>
                 <li><a href="javascript:void(0)" data-page="scores" onclick="switchPage('scores')">
                     <span class="menu-icon">&#11088;</span>
                     <span class="menu-text">工作评分</span>
@@ -405,6 +409,22 @@
                                 <tr><td colspan="4" class="text-center text-muted" style="padding: 40px;">加载中...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 数据导出 ==================== -->
+            <div class="page-section" id="pageExport">
+                <h2 class="page-title">数据导出</h2>
+
+                <div class="card">
+                    <div class="action-bar">
+                        <div></div>
+                        <button class="btn btn-success" onclick="exportPatients()">导出今日患者</button>
+                    </div>
+                    <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                        <p>点击上方按钮导出今日所有患者信息（CSV 格式）</p>
+                        <p style="font-size: 12px; margin-top: 8px;">导出的 CSV 包含完整患者信息，姓名不脱敏，仅限管理员查看</p>
                     </div>
                 </div>
             </div>
@@ -602,6 +622,7 @@
                 'accounts': 'pageAccounts',
                 'rooms': 'pageRooms',
                 'logs': 'pageLogs',
+                'export': 'pageExport',
                 'scores': 'pageScores'
             };
 
@@ -622,6 +643,49 @@
             } else if (pageName === 'scores') {
                 loadScores();
             }
+        }
+
+        // ========================================
+        // 数据导出
+        // ========================================
+        function exportPatients() {
+            var token = localStorage.getItem('token');
+            if (!token) {
+                showNotification('请先登录', 'warning');
+                return;
+            }
+
+            var baseUrl = window.location.protocol + '//' + window.location.host + '/api';
+            fetch(baseUrl + '/admin/export/patients', {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        throw new Error('权限不足，仅限管理员导出');
+                    }
+                    throw new Error('导出失败');
+                }
+                return response.blob();
+            })
+            .then(function(blob) {
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                // 从响应头获取文件名，或使用默认文件名
+                var today = new Date().toISOString().split('T')[0];
+                a.download = 'patients_' + today + '.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showNotification('患者信息导出成功', 'success');
+            })
+            .catch(function(err) {
+                showNotification('导出失败：' + err.message, 'error');
+            });
         }
 
         // ========================================

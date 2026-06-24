@@ -19,8 +19,11 @@ router.use(verifyToken, roleCheck(['doctor']));
  * 获取 WebSocket 广播函数（在 app.js 中设置）
  */
 let broadcastToRoom = null;
-function setBroadcastFn(fn) {
-  broadcastToRoom = fn;
+let broadcastToDoctor = null;
+
+function setBroadcastFn(roomFn, doctorFn) {
+  broadcastToRoom = roomFn;
+  broadcastToDoctor = doctorFn;
 }
 
 /**
@@ -148,11 +151,24 @@ router.post('/call-next', (req, res) => {
       { ticket_number: nextPatient.ticket_number, patient_name: maskName(nextPatient.name) }
     );
 
-    // 通过 WebSocket 推送叫号信息到诊室显示屏
+    // 通过 WebSocket 推送叫号信息到诊室显示屏（room_id 模式）
     if (broadcastToRoom && req.user.room_id) {
       broadcastToRoom(req.user.room_id, {
         type: 'call_update',
         room_id: req.user.room_id,
+        data: {
+          ticket_number: nextPatient.ticket_number,
+          patient_name_masked: maskName(nextPatient.name),
+          doctor_name: req.user.name
+        }
+      });
+    }
+
+    // 同时通过 doctor_id 广播（新绑定模式）
+    if (broadcastToDoctor) {
+      broadcastToDoctor(doctorId, {
+        type: 'call_update',
+        doctor_id: doctorId,
         data: {
           ticket_number: nextPatient.ticket_number,
           patient_name_masked: maskName(nextPatient.name),
