@@ -229,24 +229,26 @@
             opacity: 0.6;
         }
 
-        /* 等待队列面板 */
+        /* 等待队列面板 - 竖屏适配：底部横向排列 */
         .waiting-panel {
             position: absolute;
-            top: 120px;
-            right: 40px;
-            width: 280px;
+            bottom: 18%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border-radius: 16px;
-            padding: 20px;
+            padding: 16px 24px;
             z-index: 2;
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .waiting-panel-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             padding-bottom: 8px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             display: flex;
@@ -255,7 +257,7 @@
         }
 
         .waiting-panel-title .count {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 400;
             opacity: 0.8;
             background: rgba(255, 255, 255, 0.15);
@@ -267,43 +269,46 @@
             list-style: none;
             padding: 0;
             margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
         }
 
         .waiting-list li {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 16px;
-        }
-
-        .waiting-list li:last-child {
-            border-bottom: none;
+            gap: 8px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            font-size: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .waiting-list .ticket {
             font-weight: 700;
-            font-size: 18px;
+            font-size: 16px;
             letter-spacing: 1px;
+            color: #7dd3fc;
         }
 
         .waiting-list .name {
-            opacity: 0.85;
-            font-size: 15px;
+            opacity: 0.9;
+            font-size: 14px;
         }
 
         .waiting-list .symptom {
-            font-size: 13px;
+            font-size: 12px;
             opacity: 0.6;
-            margin-left: 8px;
         }
 
         .waiting-empty {
             text-align: center;
             opacity: 0.5;
             font-size: 14px;
-            padding: 20px 0;
+            padding: 10px 0;
+            width: 100%;
         }
 
         .hospital-name {
