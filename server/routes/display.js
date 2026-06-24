@@ -40,7 +40,16 @@ router.get('/doctor/:doctor_id', (req, res) => {
       ORDER BY p.ticket_number DESC LIMIT 1
     `).get(doctor_id);
 
-    // 查询等待队列数量
+    // 查询等待队列（最多显示5个）
+    const waitingList = db.prepare(`
+      SELECT p.ticket_number, p.name, p.symptom_name
+      FROM patients p
+      WHERE p.doctor_id = ? AND p.status = 'waiting'
+      ORDER BY p.ticket_number ASC
+      LIMIT 5
+    `).all(doctor_id);
+
+    // 查询等待队列总数
     const waitingCount = db.prepare(`
       SELECT COUNT(*) AS count FROM patients
       WHERE doctor_id = ? AND status = 'waiting'
@@ -69,6 +78,11 @@ router.get('/doctor/:doctor_id', (req, res) => {
         patient_name_masked: maskName(currentPatient.name),
         symptom_name: currentPatient.symptom_name
       } : null,
+      waiting_list: waitingList.map(p => ({
+        ticket_number: p.ticket_number,
+        patient_name_masked: maskName(p.name),
+        symptom_name: p.symptom_name
+      })),
       waiting_count: waitingCount,
       quote: quote || null
     };
@@ -115,7 +129,16 @@ router.get('/:room_id', (req, res) => {
       ORDER BY p.ticket_number DESC LIMIT 1
     `).get(room.current_doctor_id);
 
-    // 查询等待队列数量
+    // 查询等待队列（最多显示5个）
+    const waitingList = db.prepare(`
+      SELECT p.ticket_number, p.name, p.symptom_name
+      FROM patients p
+      WHERE p.doctor_id = ? AND p.status = 'waiting'
+      ORDER BY p.ticket_number ASC
+      LIMIT 5
+    `).all(room.current_doctor_id);
+
+    // 查询等待队列总数
     const waitingCount = db.prepare(`
       SELECT COUNT(*) AS count FROM patients
       WHERE doctor_id = ? AND status = 'waiting'
@@ -144,6 +167,11 @@ router.get('/:room_id', (req, res) => {
         patient_name_masked: maskName(currentPatient.name),
         symptom_name: currentPatient.symptom_name
       } : null,
+      waiting_list: waitingList.map(p => ({
+        ticket_number: p.ticket_number,
+        patient_name_masked: maskName(p.name),
+        symptom_name: p.symptom_name
+      })),
       waiting_count: waitingCount,
       quote: quote || null
     };

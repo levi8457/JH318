@@ -280,6 +280,41 @@ router.delete('/accounts/:id', (req, res) => {
 });
 
 /**
+ * PUT /api/admin/accounts/:id/reset-password
+ * 重置账号密码为默认密码 123456
+ */
+router.put('/accounts/:id/reset-password', (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const account = db.prepare('SELECT * FROM accounts WHERE id = ?').get(id);
+    if (!account) {
+      return fail(res, '账号不存在');
+    }
+
+    // 生成默认密码哈希
+    const defaultPassword = '123456';
+    const hashedPassword = bcrypt.hashSync(defaultPassword, 10);
+
+    db.prepare(`
+      UPDATE accounts SET password = ?, updated_at = datetime('now', 'localtime') WHERE id = ?
+    `).run(hashedPassword, id);
+
+    // 记录操作日志
+    logOperation(
+      req.user.id, req.user.name,
+      'reset_password', 'account', parseInt(id),
+      { name: account.name, phone: account.phone }
+    );
+
+    return success(res, null, `密码已重置为 ${defaultPassword}`);
+  } catch (err) {
+    console.error('重置密码失败:', err);
+    return fail(res, '重置密码失败，服务器错误');
+  }
+});
+
+/**
  * GET /api/admin/logs
  * 获取操作记录（支持类型筛选）
  */

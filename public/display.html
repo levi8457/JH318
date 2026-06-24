@@ -229,6 +229,83 @@
             opacity: 0.6;
         }
 
+        /* 等待队列面板 */
+        .waiting-panel {
+            position: absolute;
+            top: 120px;
+            right: 40px;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            z-index: 2;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .waiting-panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .waiting-panel-title .count {
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0.8;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+
+        .waiting-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .waiting-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 16px;
+        }
+
+        .waiting-list li:last-child {
+            border-bottom: none;
+        }
+
+        .waiting-list .ticket {
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+
+        .waiting-list .name {
+            opacity: 0.85;
+            font-size: 15px;
+        }
+
+        .waiting-list .symptom {
+            font-size: 13px;
+            opacity: 0.6;
+            margin-left: 8px;
+        }
+
+        .waiting-empty {
+            text-align: center;
+            opacity: 0.5;
+            font-size: 14px;
+            padding: 20px 0;
+        }
+
         .hospital-name {
             font-size: 20px;
             font-weight: 400;
@@ -351,6 +428,17 @@
             <div class="call-number waiting" id="callNumber">等待叫号中...</div>
             <div class="call-patient-name" id="callPatientName" style="display: none;"></div>
             <div class="call-notice" id="callNotice" style="display: none;"></div>
+        </div>
+
+        <!-- 等待队列面板 -->
+        <div class="waiting-panel" id="waitingPanel">
+            <div class="waiting-panel-title">
+                <span>等候队列</span>
+                <span class="count" id="waitingCount">0 人</span>
+            </div>
+            <ul class="waiting-list" id="waitingList">
+                <li class="waiting-empty">暂无等候患者</li>
+            </ul>
         </div>
 
         <!-- 区域三：底部信息 -->
@@ -491,6 +579,26 @@
 
             document.getElementById('hospitalName').textContent = hospitalName;
             document.getElementById('roomNumber').textContent = roomName ? (roomName + ' (' + roomDisplayId + ')') : (roomDisplayId || '--');
+
+            // 更新等待队列
+            var waitingList = data.waiting_list || data.waitingList || [];
+            var waitingCount = data.waiting_count || data.waitingCount || 0;
+            var waitingListEl = document.getElementById('waitingList');
+            var waitingCountEl = document.getElementById('waitingCount');
+
+            waitingCountEl.textContent = waitingCount + ' 人';
+
+            if (waitingList.length > 0) {
+                waitingListEl.innerHTML = waitingList.map(function(p) {
+                    return '<li>' +
+                        '<span class="ticket">' + (p.ticket_number || p.ticketNo || '') + '</span>' +
+                        '<span class="name">' + (p.patient_name_masked || p.patient_name || p.name || '') +
+                        '<span class="symptom">' + (p.symptom_name || p.symptom || '') + '</span></span>' +
+                        '</li>';
+                }).join('');
+            } else {
+                waitingListEl.innerHTML = '<li class="waiting-empty">暂无等候患者</li>';
+            }
 
             // 更新叫号信息
             // 后端返回 current_patient，兼容旧字段名 current_call/currentCall
