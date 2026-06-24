@@ -444,6 +444,25 @@ router.put('/rooms/:id', (req, res) => {
     values.push(id);
     db.prepare(`UPDATE rooms SET ${updates.join(', ')} WHERE id = ?`).run(...values);
 
+    // 同步更新医生的 room_id
+    const newDocId = current_doctor_id || doctor_id;
+    const oldDocId = room.current_doctor_id;
+
+    // 如果更换了医生，清除旧医生的 room_id
+    if (oldDocId && newDocId !== undefined && parseInt(newDocId) !== oldDocId) {
+      db.prepare('UPDATE accounts SET room_id = NULL WHERE id = ?').run(oldDocId);
+    }
+
+    // 设置新医生的 room_id
+    if (newDocId !== undefined && newDocId !== null && newDocId !== '') {
+      db.prepare('UPDATE accounts SET room_id = ? WHERE id = ?').run(parseInt(id), parseInt(newDocId));
+    }
+
+    // 如果医生被清空，清除该医生的 room_id
+    if ((newDocId === null || newDocId === '' || newDocId === undefined) && oldDocId) {
+      db.prepare('UPDATE accounts SET room_id = NULL WHERE id = ?').run(oldDocId);
+    }
+
     logOperation(
       req.user.id, req.user.name,
       'update_room', 'room', parseInt(id),
