@@ -90,6 +90,12 @@ initWebSocket(server);
 const doctorModule = require('./routes/doctor');
 doctorModule.setBroadcastFn(broadcastToRoom, broadcastToDoctor);
 
+// ==================== 根路径重定向 ====================
+// 访问根路径时自动跳转到登录页
+app.get('/', (req, res) => {
+  res.redirect('/login.html');
+});
+
 // ==================== 错误处理 ====================
 
 // 404 处理
