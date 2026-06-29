@@ -412,7 +412,7 @@
             letter-spacing: 8px;
         }
 
-        /* ==================== 响应式 ==================== */
+        /* ==================== 响应式 - 小屏横屏 ==================== */
         @media (max-width: 768px) {
             .header { padding: 0 16px; }
             .brand-name { font-size: 15px; }
@@ -430,6 +430,244 @@
             .calling-ticket { font-size: 22px; }
             .calling-patient { font-size: 15px; }
             .footer-slogan { font-size: 16px; letter-spacing: 6px; }
+        }
+
+        /* ==================== 响应式 - 竖屏终端适配 ==================== */
+        /* 适配竖屏显示器（如 1080×1920、1276×2270 等纵向屏幕） */
+        @media (orientation: portrait) {
+            /* --- 顶部品牌栏 --- */
+            .header {
+                height: 6%;
+                min-height: 50px;
+                padding: 0 28px;
+            }
+            .brand-logo {
+                width: 36px;
+                height: 36px;
+            }
+            .brand-name {
+                font-size: 20px;
+            }
+            .brand-en {
+                font-size: 11px;
+            }
+            .time-main {
+                font-size: 22px;
+            }
+            .time-date {
+                font-size: 14px;
+            }
+
+            /* --- 医生形象区：降低高度占比，避免竖屏下过高 --- */
+            .doctor-section {
+                height: 28%;
+                min-height: 200px;
+            }
+
+            /* --- 信息卡片区：获得更多空间 --- */
+            .info-section {
+                flex: 1;
+                padding: 14px 28px;
+                gap: 10px;
+            }
+
+            /* 姓名卡片 */
+            .card-name .label {
+                font-size: 18px;
+                padding: 14px 22px;
+                min-width: 100px;
+            }
+            .card-name .value {
+                font-size: 30px;
+                padding: 14px 22px;
+            }
+
+            /* 职称卡片 */
+            .card-title {
+                font-size: 22px;
+                padding: 14px 20px;
+            }
+
+            /* 专业擅长卡片 */
+            .card-specialty .label {
+                font-size: 18px;
+                padding: 14px 14px;
+                min-width: 56px;
+                letter-spacing: 5px;
+            }
+            .card-specialty .value {
+                font-size: 15px;
+                padding: 14px 20px;
+                line-height: 1.8;
+            }
+
+            /* 正在就诊卡片 */
+            .card-calling .label {
+                font-size: 18px;
+                padding: 12px 12px;
+                min-width: 56px;
+                letter-spacing: 4px;
+            }
+            .card-calling .value {
+                padding: 12px 20px;
+            }
+            .calling-ticket {
+                font-size: 34px;
+            }
+            .calling-ticket.waiting {
+                font-size: 20px;
+            }
+            .calling-patient {
+                font-size: 20px;
+            }
+            .calling-notice {
+                font-size: 14px;
+            }
+
+            /* 候诊患者卡片 */
+            .card-waiting .label {
+                font-size: 18px;
+                padding: 12px 12px;
+                min-width: 56px;
+                letter-spacing: 4px;
+            }
+            .card-waiting .value {
+                padding: 10px 20px;
+            }
+            .waiting-count {
+                font-size: 15px;
+            }
+            .waiting-item {
+                padding: 5px 12px;
+                font-size: 15px;
+            }
+            .waiting-item .name {
+                font-size: 14px;
+            }
+
+            /* --- 底部标语 --- */
+            .footer {
+                height: 5%;
+                min-height: 42px;
+            }
+            .footer-slogan {
+                font-size: 24px;
+                letter-spacing: 10px;
+            }
+        }
+
+        /* ==================== 响应式 - 超高竖屏终端 ==================== */
+        /* 适配超高分辨率竖屏（高度>2000px），进一步优化大屏字体和间距 */
+        @media (orientation: portrait) and (min-height: 2000px) {
+            .header {
+                height: 5%;
+                padding: 0 40px;
+            }
+            .brand-logo {
+                width: 48px;
+                height: 48px;
+            }
+            .brand-name {
+                font-size: 26px;
+            }
+            .brand-en {
+                font-size: 14px;
+            }
+            .time-main {
+                font-size: 28px;
+            }
+            .time-date {
+                font-size: 18px;
+            }
+
+            .doctor-section {
+                height: 26%;
+                min-height: 300px;
+            }
+
+            .info-section {
+                padding: 24px 48px;
+                gap: 16px;
+            }
+
+            .card-name .label {
+                font-size: 24px;
+                padding: 20px 32px;
+                min-width: 130px;
+            }
+            .card-name .value {
+                font-size: 40px;
+                padding: 20px 32px;
+            }
+
+            .card-title {
+                font-size: 30px;
+                padding: 20px 28px;
+            }
+
+            .card-specialty .label {
+                font-size: 24px;
+                padding: 20px 18px;
+                min-width: 70px;
+                letter-spacing: 6px;
+            }
+            .card-specialty .value {
+                font-size: 20px;
+                padding: 20px 28px;
+                line-height: 2;
+            }
+
+            .card-calling .label {
+                font-size: 24px;
+                padding: 16px 16px;
+                min-width: 70px;
+                letter-spacing: 5px;
+            }
+            .card-calling .value {
+                padding: 16px 28px;
+            }
+            .calling-ticket {
+                font-size: 48px;
+            }
+            .calling-ticket.waiting {
+                font-size: 26px;
+            }
+            .calling-patient {
+                font-size: 26px;
+            }
+            .calling-notice {
+                font-size: 18px;
+            }
+
+            .card-waiting .label {
+                font-size: 24px;
+                padding: 16px 16px;
+                min-width: 70px;
+                letter-spacing: 5px;
+            }
+            .card-waiting .value {
+                padding: 14px 28px;
+            }
+            .waiting-count {
+                font-size: 20px;
+            }
+            .waiting-item {
+                padding: 8px 18px;
+                font-size: 20px;
+                gap: 8px;
+            }
+            .waiting-item .name {
+                font-size: 18px;
+            }
+
+            .footer {
+                height: 4%;
+                min-height: 50px;
+            }
+            .footer-slogan {
+                font-size: 32px;
+                letter-spacing: 14px;
+            }
         }
     </style>
 </head>
