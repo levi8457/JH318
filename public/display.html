@@ -669,9 +669,120 @@
                 letter-spacing: 14px;
             }
         }
+
+        /* ==================== 语音启用按钮 ==================== */
+        .audio-enable-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .audio-enable-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .audio-enable-btn {
+            background: linear-gradient(135deg, #4a9b7f, #3d8b6f);
+            color: #fff;
+            border: none;
+            border-radius: 16px;
+            padding: 28px 64px;
+            font-size: 28px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(74, 155, 127, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-family: inherit;
+        }
+
+        .audio-enable-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(74, 155, 127, 0.5);
+        }
+
+        .audio-enable-btn:active {
+            transform: scale(0.98);
+        }
+
+        .audio-enable-btn .icon {
+            font-size: 48px;
+        }
+
+        .audio-enable-btn .hint {
+            font-size: 14px;
+            font-weight: 400;
+            opacity: 0.8;
+        }
+
+        /* 语音状态指示器 */
+        .audio-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 12px;
+            color: #666;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .audio-status:hover {
+            opacity: 1;
+        }
+
+        .audio-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .audio-status.active .dot {
+            background: #4a9b7f;
+        }
+
+        .audio-status.error .dot {
+            background: #e74c3c;
+        }
     </style>
 </head>
 <body>
+    <!-- 语音启用遮罩层 -->
+    <div class="audio-enable-overlay" id="audioOverlay">
+        <button class="audio-enable-btn" id="audioEnableBtn">
+            <span class="icon">&#128276;</span>
+            <span>点击启用语音叫号</span>
+            <span class="hint">浏览器需要用户交互才能播放声音</span>
+        </button>
+    </div>
+
+    <!-- 语音状态指示器 -->
+    <div class="audio-status" id="audioStatus" title="点击重新启用语音">
+        <span class="dot"></span>
+        <span id="audioStatusText">语音未启用</span>
+    </div>
+
     <div class="display-screen">
         <!-- 顶部品牌栏 -->
         <div class="header">
@@ -760,6 +871,12 @@
         var pollTimer = null;
         var clockTimer = null;
 
+        // 语音播报相关
+        var audioEnabled = false;       // 语音是否已启用（用户已交互）
+        var cachedVoices = [];           // 缓存的语音列表
+        var speakRetryQueue = [];        // 待重试的播报队列
+        var speakRetryTimer = null;      // 重试定时器
+
         // ========================================
         // 页面初始化
         // ========================================
@@ -772,6 +889,9 @@
                 document.getElementById('callNumber').textContent = '请设置诊室ID';
                 return;
             }
+
+            // 初始化语音系统
+            initAudioSystem();
 
             // 启动时钟
             updateClock();
@@ -958,40 +1078,329 @@
         }
 
         // ========================================
-        // 语音播报
+        // 语音播报系统
         // ========================================
-        function speakCall(ticketNo, roomName) {
-            if (!ticketNo) return;
 
+        /**
+         * 初始化语音系统
+         * - 预加载语音列表
+         * - 绑定启用按钮事件
+         * - 检测浏览器自动播放策略
+         */
+        function initAudioSystem() {
+            // 检查浏览器是否支持语音合成
             if (!('speechSynthesis' in window)) {
-                console.warn('浏览器不支持语音合成');
+                console.warn('[语音] 浏览器不支持语音合成 API');
+                updateAudioStatus('error', '不支持语音');
                 return;
             }
 
-            window.speechSynthesis.cancel();
+            // 预加载语音列表（异步操作）
+            loadVoices();
 
+            // 语音列表可能在后续异步加载完成
+            if ('onvoiceschanged' in window.speechSynthesis) {
+                window.speechSynthesis.onvoiceschanged = function() {
+                    loadVoices();
+                    console.log('[语音] 语音列表已加载，共 ' + cachedVoices.length + ' 个语音');
+                };
+            }
+
+            // 绑定启用按钮点击事件
+            var overlay = document.getElementById('audioOverlay');
+            var btn = document.getElementById('audioEnableBtn');
+            var statusEl = document.getElementById('audioStatus');
+
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    enableAudio();
+                });
+            }
+
+            // 点击状态指示器可重新启用
+            if (statusEl) {
+                statusEl.addEventListener('click', function() {
+                    if (!audioEnabled) {
+                        showAudioOverlay();
+                    }
+                });
+            }
+
+            // 检测是否需要用户交互（Chrome 自动播放策略）
+            // 尝试静默播放，如果成功则不需要用户交互
+            testAudioPlayback();
+        }
+
+        /**
+         * 加载并缓存中文语音列表
+         */
+        function loadVoices() {
+            if (!('speechSynthesis' in window)) return;
+
+            var voices = window.speechSynthesis.getVoices();
+            if (voices.length === 0) return;
+
+            // 筛选中文语音
+            cachedVoices = voices.filter(function(v) {
+                return v.lang.indexOf('zh') !== -1 || v.lang.indexOf('CN') !== -1;
+            });
+
+            // 如果没有中文语音，保留所有语音作为备用
+            if (cachedVoices.length === 0) {
+                cachedVoices = voices;
+                console.warn('[语音] 未找到中文语音，使用默认语音');
+            }
+        }
+
+        /**
+         * 测试音频是否可以自动播放
+         * 如果浏览器允许则直接启用语音
+         */
+        function testAudioPlayback() {
+            if (!('speechSynthesis' in window)) return;
+
+            try {
+                // 尝试播放一个空 utterance 来检测是否被阻止
+                var test = new SpeechSynthesisUtterance('');
+                test.volume = 0;
+                test.onend = function() {
+                    // 播放成功，说明不需要用户交互
+                    console.log('[语音] 自动播放测试通过，无需用户交互');
+                    enableAudio();
+                };
+                test.onerror = function() {
+                    // 播放失败，需要用户交互
+                    console.log('[语音] 自动播放被阻止，需要用户交互');
+                    showAudioOverlay();
+                };
+
+                // 设置超时检测（某些浏览器不触发 onend/onerror）
+                var testTimeout = setTimeout(function() {
+                    if (!audioEnabled) {
+                        console.log('[语音] 自动播放测试超时，显示启用按钮');
+                        showAudioOverlay();
+                    }
+                }, 1500);
+
+                // 清除超时当有结果时
+                var origOnEnd = test.onend;
+                var origOnError = test.onerror;
+                test.onend = function() {
+                    clearTimeout(testTimeout);
+                    origOnEnd();
+                };
+                test.onerror = function() {
+                    clearTimeout(testTimeout);
+                    origOnError();
+                };
+
+                window.speechSynthesis.speak(test);
+            } catch (e) {
+                console.error('[语音] 自动播放测试异常:', e);
+                showAudioOverlay();
+            }
+        }
+
+        /**
+         * 显示语音启用遮罩层
+         */
+        function showAudioOverlay() {
+            var overlay = document.getElementById('audioOverlay');
+            if (overlay) {
+                overlay.classList.remove('hidden');
+            }
+            updateAudioStatus('inactive', '语音未启用');
+        }
+
+        /**
+         * 启用语音播报
+         * 由用户点击按钮触发，满足浏览器自动播放策略
+         */
+        function enableAudio() {
+            if (audioEnabled) return;
+
+            audioEnabled = true;
+
+            // 隐藏遮罩层
+            var overlay = document.getElementById('audioOverlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+
+            // 更新状态指示器
+            updateAudioStatus('active', '语音已启用');
+
+            // 播放测试语音
+            try {
+                var test = new SpeechSynthesisUtterance('语音已启用');
+                test.lang = 'zh-CN';
+                test.rate = 1.0;
+                test.volume = 0.5;
+
+                var voice = getChineseVoice();
+                if (voice) test.voice = voice;
+
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(test);
+                console.log('[语音] 语音播报已启用');
+            } catch (e) {
+                console.error('[语音] 启用测试失败:', e);
+            }
+
+            // 处理待重试的播报队列
+            if (speakRetryQueue.length > 0) {
+                console.log('[语音] 处理待播报队列: ' + speakRetryQueue.length + ' 条');
+                var item = speakRetryQueue.shift();
+                setTimeout(function() {
+                    speakCall(item.ticketNo, item.roomName);
+                }, 1500);
+            }
+        }
+
+        /**
+         * 获取中文语音
+         */
+        function getChineseVoice() {
+            if (cachedVoices.length === 0) {
+                loadVoices();
+            }
+
+            // 优先选择 zh-CN 语音
+            var voice = cachedVoices.find(function(v) {
+                return v.lang === 'zh-CN';
+            });
+
+            // 其次选择任何包含 zh 的语音
+            if (!voice) {
+                voice = cachedVoices.find(function(v) {
+                    return v.lang.indexOf('zh') !== -1;
+                });
+            }
+
+            // 最后用第一个可用语音
+            if (!voice && cachedVoices.length > 0) {
+                voice = cachedVoices[0];
+            }
+
+            return voice || null;
+        }
+
+        /**
+         * 更新语音状态指示器
+         */
+        function updateAudioStatus(state, text) {
+            var statusEl = document.getElementById('audioStatus');
+            var textEl = document.getElementById('audioStatusText');
+
+            if (statusEl) {
+                statusEl.classList.remove('active', 'error');
+                if (state === 'active') statusEl.classList.add('active');
+                if (state === 'error') statusEl.classList.add('error');
+            }
+
+            if (textEl) {
+                textEl.textContent = text;
+            }
+        }
+
+        /**
+         * 语音播报叫号
+         * @param {string} ticketNo - 叫号号码
+         * @param {string} roomName - 诊室名称
+         */
+        function speakCall(ticketNo, roomName) {
+            if (!ticketNo) return;
+
+            // 检查浏览器支持
+            if (!('speechSynthesis' in window)) {
+                console.warn('[语音] 浏览器不支持语音合成');
+                return;
+            }
+
+            // 如果语音未启用，加入待播队列
+            if (!audioEnabled) {
+                console.log('[语音] 语音未启用，加入待播队列: ' + ticketNo);
+                speakRetryQueue.push({
+                    ticketNo: ticketNo,
+                    roomName: roomName
+                });
+                // 只保留最后一条
+                if (speakRetryQueue.length > 1) {
+                    speakRetryQueue = speakRetryQueue.slice(-1);
+                }
+                return;
+            }
+
+            // 构建播报文本
             var roomText = roomName ? '到' + roomName + '就诊' : '';
             var text = '请' + ticketNo + '号患者' + roomText;
 
+            console.log('[语音] 开始播报: ' + text);
+
+            // 取消之前的播报
+            window.speechSynthesis.cancel();
+
+            // 创建 utterance
             var utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'zh-CN';
             utterance.rate = 0.9;
             utterance.pitch = 1.0;
             utterance.volume = 1.0;
 
-            var voices = window.speechSynthesis.getVoices();
-            var chineseVoice = voices.find(function(v) {
-                return v.lang.indexOf('zh') !== -1 || v.lang.indexOf('CN') !== -1;
-            });
-            if (chineseVoice) {
-                utterance.voice = chineseVoice;
+            // 设置中文语音
+            var voice = getChineseVoice();
+            if (voice) {
+                utterance.voice = voice;
+                console.log('[语音] 使用语音: ' + voice.name + ' (' + voice.lang + ')');
+            } else {
+                console.warn('[语音] 未找到中文语音，使用默认语音');
             }
 
-            window.speechSynthesis.speak(utterance);
-        }
+            // 播报成功回调
+            utterance.onstart = function() {
+                console.log('[语音] 播报开始');
+                updateAudioStatus('active', '播报中...');
+            };
 
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.onvoiceschanged = function() {};
+            utterance.onend = function() {
+                console.log('[语音] 播报完成');
+                updateAudioStatus('active', '语音已启用');
+            };
+
+            // 播报失败处理与重试
+            utterance.onerror = function(e) {
+                console.error('[语音] 播报失败:', e.error || e);
+
+                // 如果是中断错误（被 cancel），不重试
+                if (e.error === 'interrupted' || e.error === 'canceled') {
+                    return;
+                }
+
+                // 其他错误尝试重试一次
+                if (!utterance._retried) {
+                    utterance._retried = true;
+                    console.log('[语音] 1秒后重试播报...');
+                    setTimeout(function() {
+                        try {
+                            window.speechSynthesis.cancel();
+                            window.speechSynthesis.speak(utterance);
+                        } catch (err) {
+                            console.error('[语音] 重试失败:', err);
+                            updateAudioStatus('error', '播报失败');
+                        }
+                    }, 1000);
+                } else {
+                    updateAudioStatus('error', '播报失败');
+                }
+            };
+
+            // 执行播报
+            try {
+                window.speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.error('[语音] 播报异常:', e);
+                updateAudioStatus('error', '播报异常');
+            }
         }
     </script>
 </body>
